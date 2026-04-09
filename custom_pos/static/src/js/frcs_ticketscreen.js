@@ -143,43 +143,50 @@ patch (TicketScreen.prototype, {
                 );
 
                 const labels = taxLabel ? [taxLabel] : DEFAULT_LABEL.slice();
-                console.log("TAXXXXXX LABELLSLS" + labels)
-                let quantity = line.get_quantity();
-                const discount = line.get_discount();
+                const quantity = Math.abs(line.get_quantity());
+                const discountPct = line.get_discount() || 0;
 
-                if (transaction_type === transactionType[1]) {
-                    quantity = Math.abs(quantity);
-                }
+                const qtyAbs = quantity || 1;
+                const priceWithTax = line.get_price_with_tax();
+                const pricePerUnitAfterDiscount = Math.abs(priceWithTax) / qtyAbs;
+                const unitPriceBeforeDiscount = discountPct < 100
+                    ? pricePerUnitAfterDiscount / (1 - discountPct / 100)
+                    : pricePerUnitAfterDiscount;
+
+                const gtin = line.product?.barcode || line.product?.default_code || null;
 
                 return {
-                    GTIN: line.product?.barcode || null,
+                    GTIN: gtin,
                     Name: line.get_full_product_name() || "Item",
                     Quantity: quantity,
-                    Discount: discount,
+                    Discount: discountPct,
                     Labels: labels,
-                    unitPrice: line.get_price_with_tax(),
-                    TotalAmount: Math.abs(line.get_price_with_tax()),
+                    unitPrice: Math.abs(unitPriceBeforeDiscount),
+                    TotalAmount: Math.abs(priceWithTax),
                 };
             })
         );
 
 
-        const paymentTypes = order.payment_ids.map((line)=> {
+        const paymentTypes = order.payment_ids.map((line) => {
             const method = line.payment_method_id;
-            const methodName = (method.name || "").toLowerCase();
+            const methodName = (method?.name || "").toLowerCase().trim();
+            const journalType = method?.type || "";
             let type = "Card";
-            if (method.type === "cash" || methodName.includes("cash")) {
+            if (journalType === "cash" || methodName.includes("cash")) {
                 type = "Cash";
-            } else if (methodName.includes("mobile")) {
+            } else if (methodName.includes("wire") || methodName.includes("wire transfer")) {
+                type = "WireTransfer";
+            } else if (methodName.includes("check") || methodName.includes("cheque")) {
+                type = "Check";
+            } else if (methodName.includes("mobile") || methodName.includes("mpesa") || methodName.includes("mpaisa")) {
                 type = "MobileMoney";
-            } else {
+            } else if (methodName.includes("card") || methodName.includes("visa") || methodName.includes("master") || methodName.includes("eftpos")) {
                 type = "Card";
             }
-
             return {
                 Amount: line.get_amount(),
                 PaymentType: type,
-
             };
         });
 
@@ -196,7 +203,7 @@ patch (TicketScreen.prototype, {
                 invoiceType: invoice_type,
                 transactionType: transaction_type,
                 payment: paymentTypes,
-                InvoiceNumber: "22222",
+                InvoiceNumber: await this.pos.data.call("frcs.vsdc.config", "get_pos_number", [this.pos.company.id]),
                 ReferentDocumentNumber: sdcInvoice,
                 ReferentDocumentDT: referentDocumentDT,
                 Options: {

@@ -277,27 +277,39 @@ patch(PaymentScreen.prototype, {
                 );
 
                 const labels = taxLabel ? [taxLabel] : DEFAULT_LABEL.slice();
-                let quantity = line.get_quantity();
-                const discount = line.get_discount();
 
-                if (transaction_type === transactionType[1]) {
-                    quantity = Math.abs(quantity);
-                }
+                // Quantity is always positive — transaction_type tells TaxCore the direction
+                const quantity = Math.abs(line.get_quantity());
 
-                // GTIN: use barcode field, required by FRCS
+                // Discount % (0-100): covers manual discounts, promotions, pricelists
+                const discountPct = line.get_discount() || 0;
+
+                // unitPrice = tax-inclusive price BEFORE discount (per unit)
+                // TaxCore expects: unitPrice * (1 - discount/100) * qty = TotalAmount
+                const qtyAbs = quantity || 1;
+                const priceWithTax = line.get_price_with_tax();
+                const pricePerUnitAfterDiscount = Math.abs(priceWithTax) / qtyAbs;
+                const unitPriceBeforeDiscount = discountPct < 100
+                    ? pricePerUnitAfterDiscount / (1 - discountPct / 100)
+                    : pricePerUnitAfterDiscount;
+
+                // TotalAmount = line total after discount (always positive)
+                const totalAmount = Math.abs(priceWithTax);
+
+                // GTIN: barcode preferred, fallback to internal reference
                 const gtin = line.product?.barcode || line.product?.default_code || null;
 
                 return {
                     GTIN: gtin,
                     Name: line.get_full_product_name() || "Item",
                     Quantity: quantity,
-                    Discount: discount,
+                    Discount: discountPct,
                     Labels: labels,
-                    unitPrice: line.get_price_with_tax(),
-                    TotalAmount: Math.abs(line.get_price_with_tax()),
+                    unitPrice: Math.abs(unitPriceBeforeDiscount),
+                    TotalAmount: totalAmount,
                 };
             })
-        );
+        )
 
         // Build payment array with full FRCS-required payment types
         const paymentTypes = order.payment_ids.map((line) => {
