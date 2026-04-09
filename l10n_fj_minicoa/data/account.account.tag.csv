@@ -1,0 +1,4 @@
+"id","name","applicability","country_id/id"
+"fj_service_tag","Service","taxes","base.fj"
+"fj_tax_withheld_tag","Tax Withheld","taxes","base.fj"
+

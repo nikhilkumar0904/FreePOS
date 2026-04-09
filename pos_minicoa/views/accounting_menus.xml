@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- Surface Journal Entries in Accounting/Configuration -->
+  <data noupdate="1">
+    <!-- Top navbar: Accounting > Transactions > Journal Entries -->
+    <menuitem id="pos_minicoa_menu_journal_entries_txn"
+              name="Journal Entries"
+              parent="account.menu_finance_entries"
+              action="account.action_move_journal_line"
+              sequence="15"
+              groups="account.group_account_user,account.group_account_manager"/>
+    <!-- Reuse the standard Journal Entries action -->
+    <menuitem id="pos_minicoa_menu_journal_entries_conf"
+              name="Journal Entries"
+              parent="account.menu_finance_configuration"
+              action="account.action_move_journal_line"
+              sequence="95"
+              groups="account.group_account_user,account.group_account_manager"/>
+
+    <!-- Configuration > Accounting group: add Journal Entries next to Journals/Taxes/etc. -->
+    <menuitem id="pos_minicoa_menu_journal_entries_conf_accounting"
+              name="Journal Entries"
+              parent="account.account_account_menu"
+              action="account.action_move_journal_line"
+              sequence="3"
+              groups="account.group_account_user,account.group_account_manager"/>
+  </data>
+</odoo>

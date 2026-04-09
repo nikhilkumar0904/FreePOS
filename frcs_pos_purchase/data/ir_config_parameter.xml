@@ -1,0 +1,8 @@
+<odoo>
+    <data noupdate="1">
+        <record id="frcs_pos_purchase_param_require_vendor_tin" model="ir.config_parameter">
+            <field name="key">frcs_pos_purchase.require_vendor_tin</field>
+            <field name="value">False</field>
+        </record>
+    </data>
+</odoo>

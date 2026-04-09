@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Ensure FRCS VAT group has Fiji country -->
+        <record id="tax_group_vat" model="account.tax.group">
+            <field name="name">FRCS VAT</field>
+            <field name="country_id" ref="base.fj"/>
+        </record>
+    </data>
+</odoo>

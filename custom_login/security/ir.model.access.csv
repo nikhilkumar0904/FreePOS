@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_res_users_cashier,res.users.cashier,base.model_res_users,custom_login.group_cashier,1,0,0,0
+access_res_partner_cashier,res.partner.cashier,base.model_res_partner,custom_login.group_cashier,1,0,0,0
+access_res_currency_cashier,res.currency.cashier,base.model_res_currency,custom_login.group_cashier,1,0,0,0

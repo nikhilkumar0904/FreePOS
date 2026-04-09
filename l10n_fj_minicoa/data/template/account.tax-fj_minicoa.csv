@@ -1,0 +1,41 @@
+"id","name","sequence","description","invoice_label","type_tax_use","tax_scope","amount_type","price_include_override","amount","tax_group_id","children_tax_ids","repartition_line_ids/factor_percent","repartition_line_ids/repartition_type","repartition_line_ids/document_type","repartition_line_ids/account_id","repartition_line_ids/tag_ids","active","include_base_amount","country_id"
+
+"fj_tax_sale_125","VAT 12.5% (Sales)","1","FRCS VAT 12.5% Sales","G","sale","","percent","","12.5","tax_group_frcs_vat","","100","base","invoice","","","True","","base.fj"
+"","","","","","","","","","","","","100","tax","invoice","fj_21310","","","",""
+"","","","","","","","","","","","","100","base","refund","","","","",""
+"","","","","","","","","","","","","100","tax","refund","fj_21310","","","",""
+
+"fj_tax_sale_0","VAT 0% (Sales)","2","FRCS VAT 0% Sales","B","sale","","percent","","0.0","tax_group_frcs_vat","","100","base","invoice","","","True","","base.fj"
+"","","","","","","","","","","","","100","tax","invoice","fj_21310","","","",""
+"","","","","","","","","","","","","100","base","refund","","","","",""
+"","","","","","","","","","","","","100","tax","refund","fj_21310","","","",""
+
+"fj_tax_purchase_125","VAT 12.5% (Purchase)","1","FRCS VAT 12.5% Purchase","G","purchase","","percent","","12.5","tax_group_frcs_vat","","100","base","invoice","","","True","","base.fj"
+"","","","","","","","","","","","","100","tax","invoice","fj_21330","","","",""
+"","","","","","","","","","","","","100","base","refund","","","","",""
+"","","","","","","","","","","","","100","tax","refund","fj_21330","","","",""
+
+"fj_tax_purchase_0","VAT 0% (Purchase)","2","FRCS VAT 0% Purchase","B","purchase","","percent","","0.0","tax_group_frcs_vat","","100","base","invoice","","","True","","base.fj"
+"","","","","","","","","","","","","100","tax","invoice","fj_21330","","","",""
+"","","","","","","","","","","","","100","base","refund","","","","",""
+"","","","","","","","","","","","","100","tax","refund","fj_21330","","","",""
+
+"fj_tax_sale_9","VAT 9% (Sales)","3","FRCS VAT 9% Sales","A","sale","","percent","","9.0","tax_group_frcs_vat","","100","base","invoice","","","True","","base.fj"
+"","","","","","","","","","","","","100","tax","invoice","fj_21310","","","",""
+"","","","","","","","","","","","","100","base","refund","","","","",""
+"","","","","","","","","","","","","100","tax","refund","fj_21310","","","",""
+
+"fj_tax_purchase_9","VAT 9% (Purchase)","3","FRCS VAT 9% Purchase","A","purchase","","percent","","9.0","tax_group_frcs_vat","","100","base","invoice","","","True","","base.fj"
+"","","","","","","","","","","","","100","tax","invoice","fj_21330","","","",""
+"","","","","","","","","","","","","100","base","refund","","","","",""
+"","","","","","","","","","","","","100","tax","refund","fj_21330","","","",""
+
+"fj_tax_sale_15","VAT 15% (Sales)","4","FRCS VAT 15% Sales","D","sale","","percent","","15.0","tax_group_frcs_vat","","100","base","invoice","","","True","","base.fj"
+"","","","","","","","","","","","","100","tax","invoice","fj_21310","","","",""
+"","","","","","","","","","","","","100","base","refund","","","","",""
+"","","","","","","","","","","","","100","tax","refund","fj_21310","","","",""
+
+"fj_tax_purchase_15","VAT 15% (Purchase)","4","FRCS VAT 15% Purchase","D","purchase","","percent","","15.0","tax_group_frcs_vat","","100","base","invoice","","","True","","base.fj"
+"","","","","","","","","","","","","100","tax","invoice","fj_21330","","","",""
+"","","","","","","","","","","","","100","base","refund","","","","",""
+"","","","","","","","","","","","","100","tax","refund","fj_21330","","","",""

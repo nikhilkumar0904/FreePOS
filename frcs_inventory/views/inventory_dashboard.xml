@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_frcs_inventory_dashboard" model="ir.actions.client">
+        <field name="name">FRCS Inventory Dashboard</field>
+        <field name="tag">frcs_inventory_dashboard</field>
+        <!-- No path to avoid conflicts; menu root already points here -->
+    </record>
+
+    <menuitem id="menu_frcs_inventory_dashboard"
+              name="Inventory Dashboard"
+              parent="stock.menu_stock_root"
+              action="action_frcs_inventory_dashboard"
+              sequence="1"/>
+</odoo>

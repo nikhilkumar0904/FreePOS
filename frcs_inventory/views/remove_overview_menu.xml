@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data noupdate="1">
+    <!-- Hide the Inventory > Overview menu (correct id in Odoo 18) -->
+    <record id="stock.stock_picking_type_menu" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+        <field name="action" eval="False"/>
+    </record>
+</data>

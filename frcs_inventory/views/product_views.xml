@@ -1,0 +1,254 @@
+<odoo>
+    <record id="view_product_template_form_frcs" model="ir.ui.view">
+      <field name="name">product.template.form.frcs.inventory</field>
+      <field name="model">product.template</field>
+      <field name="priority">99</field>
+      <field name="inherit_id" ref="product.product_template_only_form_view"/>
+      <field name="arch" type="xml">
+        <!-- Rename the tab -->
+        <xpath expr="//page[@name='general_information']" position="attributes">
+          <attribute name="string">Product Information</attribute>
+        </xpath>
+
+        <!-- Keep only Product Information in the first group -->
+        <xpath expr="//page[@name='general_information']/group[1]" position="replace">
+          <group col="3">
+            <group string="Product Information">
+              <field name="x_product_code" required="1"/>
+              <field name="x_product_description"/>
+              <!-- Expose GTIN directly on the Product Information block -->
+              <field name="frcs_gtin"/>
+              <field name="categ_id" required="1"/>
+              <!-- Hide the product type selector; enforce 'Goods' in model defaults -->
+              <field name="type" invisible="1"/>
+              <!-- Display Product Type as static text styled like a label/value pair -->
+              <!-- Render Product Type as label/value row using Odoo classes -->
+              <div class="o_row">
+                <div class="o_td_label">
+                  <span class="o_form_label">Product Type</span>
+                </div>
+                <div class="o_td_field">
+                  <span class="o_form_value">Goods</span>
+                </div>
+              </div>
+              <field name="x_expiry_date" readonly="type == 'service'"
+                     options="{'min': context_today().strftime('%Y-%m-%d')}"/>
+            </group>
+          </group>
+        </xpath>
+
+        <!-- New tab: Supplier Information (inserted before Sales) -->
+        <xpath expr="//page[@name='sales']" position="before">
+          <page name="supplier_info" string="Supplier Information">
+            <group>
+              <field name="x_supplier_code"/>
+              <field name="x_supplier_name"/>
+              <field name="x_stock_in_date"/>
+              <field name="x_purchase_tax_id" groups="base.group_user" required="1"
+                     domain="[('type_tax_use','=','purchase'),('amount_type','=','percent'),('active','=',True)]"
+                     options="{'no_create': True, 'no_open': True, 'no_create_edit': True}"/>
+              <field name="x_onhand_manual" string="On Hand"/>
+            </group>
+          </page>
+        </xpath>
+
+        <!-- New tab: Sales Information (inserted before Sales) -->
+        <xpath expr="//page[@name='sales']" position="before">
+          <page name="frcs_sales_info" string="Sales Information">
+            <group>
+              <field name="list_price" string="Sales Price (FJ$)" widget="monetary" options="{'currency_field': 'currency_id'}" required="1"/>
+              <!-- Show Cost of Goods Sold on the Sales tab for quick reference/editing -->
+              <field name="standard_price" string="COGS (FJ$)" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+              <field name="x_sale_tax_id"
+                     groups="base.group_user"
+                     domain="[('type_tax_use','=','sale'), ('amount_type','=','percent'), ('active','=',True)]"
+                     options="{'no_create': True, 'no_open': True, 'no_create_edit': True}"/>
+              
+              <field name="barcode"/>
+              <field name="x_default_discount_amount" string="Discount (FJ$)" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+            </group>
+          </page>
+        </xpath>
+      </field>
+    </record>
+
+    <!-- Add GTIN column to product template tree view (FRCS label removed) -->
+    <record id="view_product_template_tree_frcs" model="ir.ui.view">
+      <field name="name">product.template.tree.frcs.inventory</field>
+      <field name="model">product.template</field>
+      <field name="inherit_id" ref="product.product_template_tree_view"/>
+      <field name="arch" type="xml">
+        <xpath expr="//list/field[@name='default_code']" position="after">
+          <field name="frcs_gtin"/>
+        </xpath>
+        <!-- Show computed tax amount and total price next to Sales Price -->
+        <xpath expr="//list/field[@name='list_price']" position="after">
+          <field name="x_sale_tax_rate" string="Tax %"/>
+          <field name="x_tax_amount" string="Tax (FJ$)" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+          <field name="x_total_price" string="Total Price (FJ$)" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+        </xpath>
+      </field>
+    </record>
+
+    <!-- Tax Products list view (SQL model tax.products) -->
+    <record id="view_tax_products_tree" model="ir.ui.view">
+      <field name="name">tax.products.tree</field>
+      <field name="model">tax.products</field>
+      <field name="arch" type="xml">
+        <list string="Tax Products">
+          <field name="name"/>
+          <field name="categ_id" context="{'show_full_path': False}"/>
+          <field name="tax_status"/>
+        </list>
+      </field>
+    </record>
+
+    <!-- Tax Products search view -->
+    <record id="view_tax_products_filter" model="ir.ui.view">
+      <field name="name">tax.products.search</field>
+      <field name="model">tax.products</field>
+      <field name="arch" type="xml">
+        <search string="Search Tax Products">
+          <filter name="taxable" string="Taxable Products" domain="[('tax_status','=','taxable')]"/>
+          <filter name="non_taxable" string="Non-Taxable Products" domain="[('tax_status','=','non_taxable')]"/>
+          <field name="categ_id"/>
+        </search>
+      </field>
+    </record>
+
+    <!-- Bulk Tax Wizard form view -->
+    <record id="view_tax_bulk_wizard_form" model="ir.ui.view">
+      <field name="name">tax.bulk.wizard.form</field>
+      <field name="model">tax.bulk.wizard</field>
+      <field name="arch" type="xml">
+        <form string="Bulk Tax Action">
+          <group>
+            <field name="tax_id"/>
+            <field name="action_type"/>
+          </group>
+          <footer>
+            <button name="action_confirm" type="object" string="Confirm" class="btn-primary"/>
+            <button string="Cancel" class="btn-secondary" special="cancel"/>
+          </footer>
+        </form>
+      </field>
+    </record>
+
+    <!-- Replace the Forecasted column with our custom Product Quantity -->
+    <record id="view_product_template_tree_replace_forecasted_with_qty" model="ir.ui.view">
+      <field name="name">product.template.tree.replace.forecasted.with.qty.frcs</field>
+      <field name="model">product.template</field>
+      <field name="inherit_id" ref="product.product_template_tree_view"/>
+      <!-- Higher priority so it runs after stock's inheritance -->
+      <field name="priority">120</field>
+      <field name="arch" type="xml">
+        <xpath expr="//field[@name='virtual_available']" position="replace">
+          <field name="x_purchase_qty" string="On Hand" readonly="1" optional="show"/>
+        </xpath>
+      </field>
+    </record>
+
+    <!-- Hide Internal Reference (default_code) and Tags (product_tag_ids) to declutter the list -->
+    <record id="view_product_template_tree_hide_ref_tags" model="ir.ui.view">
+      <field name="name">product.template.tree.hide.ref.tags.frcs</field>
+      <field name="model">product.template</field>
+      <field name="inherit_id" ref="product.product_template_tree_view"/>
+      <field name="priority">121</field>
+      <field name="arch" type="xml">
+        <xpath expr="//field[@name='default_code']" position="attributes">
+          <attribute name="optional">hide</attribute>
+          <attribute name="column_invisible">True</attribute>
+        </xpath>
+        <xpath expr="//field[@name='product_tag_ids']" position="attributes">
+          <attribute name="optional">hide</attribute>
+          <attribute name="column_invisible">True</attribute>
+        </xpath>
+        <!-- Hide On Hand (qty_available) from the list -->
+        <xpath expr="//field[@name='qty_available']" position="attributes">
+          <attribute name="optional">hide</attribute>
+          <attribute name="column_invisible">True</attribute>
+        </xpath>
+      </field>
+    </record>
+
+    <!-- Enhance search view: make GTIN searchable and add quick filters for FRCS label -->
+    <record id="view_product_template_search_frcs" model="ir.ui.view">
+      <field name="name">product.template.search.frcs.inventory</field>
+      <field name="model">product.template</field>
+      <field name="inherit_id" ref="product.product_template_search_view"/>
+      <field name="arch" type="xml">
+        <xpath expr="//search" position="inside">
+          <field name="x_product_code" string="Product Code"/>
+          <field name="frcs_gtin" string="GTIN"/>
+          <field name="barcode"/>
+          <separator/>
+          <filter name="tax0" string="Tax 0%" domain="[('x_sale_tax_id.amount','=',0.0)]"/>
+          <filter name="tax125" string="Tax 12.5%" domain="[('x_sale_tax_id.amount','=',12.5)]"/>
+          <filter name="expired" string="Expired" domain="[('x_is_expired','=',True)]"/>
+          <filter name="expiring_soon" string="Expiring Soon" domain="[('x_is_expiring_soon','=',True)]"/>
+          <separator/>
+          <field name="x_supplier_name" string="Supplier"/>
+        </xpath>
+      </field>
+    </record>
+
+    <!-- Kanban: expose GTIN on the card (FRCS label removed) -->
+    <record id="view_product_template_kanban_frcs" model="ir.ui.view">
+      <field name="name">product.template.kanban.frcs.inventory</field>
+      <field name="model">product.template</field>
+      <field name="inherit_id" ref="product.product_template_kanban_view"/>
+      <field name="arch" type="xml">
+        <!-- Make GTIN available in the kanban record -->
+        <xpath expr="//kanban" position="inside">
+          <field name="frcs_gtin"/>
+        </xpath>
+        <!-- Add a small muted line under the header info (FRCS label removed) -->
+        <xpath expr="//kanban/templates/t[@t-name='card']/main/div[contains(@class,'mb-1')]" position="after">
+          <div class="text-muted small">
+            <t t-if="record.frcs_gtin.value">GTIN: <field name="frcs_gtin"/></t>
+          </div>
+        </xpath>
+      </field>
+    </record>
+
+    <!-- Standalone tree view grouped by Category -->
+    <record id="view_product_tree_grouped_category" model="ir.ui.view">
+      <field name="name">product.template.tree.grouped.category</field>
+      <field name="model">product.template</field>
+      <field name="arch" type="xml">
+        <list string="Products by Category">
+          <field name="categ_id" string="Product Category" widget="many2one"
+                 options="{'no_open': True, 'no_create': True}"
+                 context="{'show_full_path': False}"/>
+          <field name="name"/>
+          <field name="frcs_gtin" string="GTIN"/>
+          <field name="list_price" string="Sales Price" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+          <field name="x_sale_tax_rate" string="Tax %"/>
+          <field name="x_tax_amount" string="Tax (FJ$)" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+          <field name="x_total_price" string="Total Price (FJ$)" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+          <field name="standard_price" string="Cost" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+          <field name="qty_available" string="On Hand"/>
+        </list>
+      </field>
+    </record>
+
+    <!-- Patch: ensure taxes fields exist on Sales tab and show all active taxes -->
+    <record id="view_product_template_form_frcs_patch_taxes" model="ir.ui.view">
+      <field name="name">product.template.form.frcs.inventory.patch.taxes</field>
+      <field name="model">product.template</field>
+      <field name="inherit_id" ref="product.product_template_only_form_view"/>
+      <field name="priority">122</field>
+      <field name="arch" type="xml">
+        <xpath expr="//page[@name='sales']" position="inside">
+          <group>
+            <field name="taxes_id" widget="many2many_tags"
+                   domain="[('type_tax_use','=','sale'),('active','=',True)]"
+                   options="{'no_create': True}"/>
+            <field name="supplier_taxes_id" widget="many2many_tags"
+                   domain="[('type_tax_use','=','purchase'),('active','=',True)]"
+                   options="{'no_create': True}"/>
+          </group>
+        </xpath>
+      </field>
+    </record>
+</odoo>

@@ -1,0 +1,92 @@
+
+html, body {
+    height:100%;
+    margin:0%;
+}
+
+section {
+    background-position: center center;
+    background-size: cover;
+}
+
+.login-logo {
+    transition: filter 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+.login-logo:hover{
+    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.8)) 
+            drop-shadow(0 0 20px rgba(255, 255, 255, 0.6)) 
+            brightness(1.2);
+    transform: scale(1.05); 
+}
+
+
+.login-quote blockquote {
+    font-family: 'Georgia', serif;
+    font-size:40px;
+    font-weight: 500;
+    line-height: 1.6;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    color: #fff;
+}
+
+.login-quote .blockquote {
+    padding: $spacer/2 $spacer;
+    border: none !important;
+    font-style: italic;
+    text-align: center;
+}
+
+.Login-quote .blockquote-footer {
+    text-align: center;
+    margin-top: -$blockquote-margin-y;
+    margin-bottom: $blockquote-margin-y;
+    @include font-size($blockquote-footer-font-size);
+
+        & ::before,
+        & ::after {
+            content: "\2014\0GAG"; // em dash, nbsp
+        }
+}
+
+.card-container {
+    background-color: $card-bg;
+}
+
+.custom-login-card {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); 
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.o_login_form {
+    background-color: transparent; // Make the background transparent to show the card behind
+    border: 1px solid rgba(255, 255, 255, 0.5); // Add a subtle, semi-transparent border
+    color: white; // Ensure the text is readable on a dark or glassmorphic background
+    font-size: 1rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: 25px; //
+
+    &::placeholder {
+        color: rgba(255, 255, 255, 0.7);
+        font-weight: 300;
+    }
+
+    transition: all 0.3s ease-in-out;
+
+    // Focus State (when the user clicks on the field)
+    &:focus {
+        background-color: rgba(255, 255, 255, 0.2); // A slight fill on focus
+        border-color: #ff0000; // A nice blue highlight
+        box-shadow: 0 0 10px rgba(255, 0, 0, 0.5); // A subtle glow on focus
+        outline: none; // Remove the default browser outline
+    }
+
+    .card_title {
+        color: #333;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    }
+
+}

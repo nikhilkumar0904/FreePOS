@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Minimal Fiji tax tags, similar to AU structure -->
+    <record id="fj_service_tag" model="account.account.tag">
+        <field name="name">Service</field>
+        <field name="applicability">taxes</field>
+        <field name="country_id" ref="base.fj"/>
+    </record>
+    <record id="fj_tax_withheld_tag" model="account.account.tag">
+        <field name="name">Tax Withheld</field>
+        <field name="applicability">taxes</field>
+        <field name="country_id" ref="base.fj"/>
+    </record>
+</odoo>

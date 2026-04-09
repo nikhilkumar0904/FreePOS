@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="custom_pos.FiscalReportClientAction" owl="1">
+        <style>
+            .o_fiscal_report_container {
+                background: #f5f7fb;
+            }
+            .o_fiscal_report_container .card {
+                border-radius: 1rem;
+                box-shadow: 0 15px 35px rgba(31, 45, 61, 0.1);
+                border: none;
+            }
+            .o_fiscal_report_container .card-header {
+                font-size: 0.95rem;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+            }
+            .o_fiscal_report_container table th {
+                font-size: 0.85rem;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+                color: #6c757d;
+            }
+            .o_fiscal_report_container table td {
+                vertical-align: middle;
+            }
+            .o_payment_pill {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                border-radius: 999px;
+                padding: 0.35rem 0.85rem;
+                margin-bottom: 0.4rem;
+                font-weight: 600;
+            }
+            .o_payment_pill span {
+                font-weight: 700;
+            }
+            .o_payment_pill--cash { background: rgba(76, 110, 245, 0.12); color: #334abf; }
+            .o_payment_pill--card { background: rgba(12, 199, 153, 0.12); color: #0a8062; }
+            .o_payment_pill--mobile-money { background: rgba(247, 103, 7, 0.12); color: #c25705; }
+        </style>
+        <div class="o_fiscal_report_container container py-4 o_scrollable" style="max-height: calc(100vh - 2rem); overflow-y: auto;">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header fw-bold">
+                    Fiscal Report Filters
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Report start date</label>
+                            <input type="date" class="form-control"
+                                t-att-value="state.filters.start"
+                                t-on-input="(ev) => this.onDateChange('start', ev)"/>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Report end date</label>
+                            <input type="date" class="form-control"
+                                t-att-value="state.filters.end"
+                                t-on-input="(ev) => this.onDateChange('end', ev)"/>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label mb-0">POS Configurations</label>
+                                <button type="button"
+                                    t-attf-class="btn btn-link btn-sm text-decoration-none p-0 {{ state.filters.configs.length ? '' : 'invisible' }}"
+                                    t-on-click="() => this.clearSelection('configs')">
+                                    Clear
+                                </button>
+                            </div>
+                            <select multiple="multiple" class="form-select"
+                                t-on-change="(ev) => this.onSelectionChange('configs', ev)">
+                                <t t-foreach="state.options.configs" t-as="config" t-key="config.id">
+                                    <option t-att-value="config.id"
+                                        t-att-selected="state.filters.configs.includes(config.id) ? 'selected' : undefined"
+                                        t-esc="config.name"/>
+                                </t>
+                            </select>
+                            <small class="text-muted">Leave empty to include all configurations.</small>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label mb-0">POS Sessions</label>
+                                <button type="button"
+                                    t-attf-class="btn btn-link btn-sm text-decoration-none p-0 {{ state.filters.sessions.length ? '' : 'invisible' }}"
+                                    t-on-click="() => this.clearSelection('sessions')">
+                                    Clear
+                                </button>
+                            </div>
+                            <select multiple="multiple" class="form-select"
+                                t-on-change="(ev) => this.onSelectionChange('sessions', ev)">
+                                <t t-foreach="state.options.sessions" t-as="session" t-key="session.id">
+                                    <option t-att-value="session.id"
+                                        t-att-selected="state.filters.sessions.includes(session.id) ? 'selected' : undefined">
+                                        <t t-esc="session.name"/>
+                                    </option>
+                                </t>
+                            </select>
+                            <small class="text-muted">Optional filter on specific sessions.</small>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <button class="btn btn-primary"
+                            t-att-disabled="state.loading"
+                            t-on-click="generateReport">
+                            <t t-if="state.loading">Generating...</t>
+                            <t t-else="">Generate Report</t>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div t-if="state.loading" class="alert alert-info">
+                Processing fiscal report...
+            </div>
+
+            <div t-if="hasReport" class="o_fiscal_report_results">
+                <div class="row g-3 mb-4">
+                    <t t-foreach="state.report.overviewCards" t-as="card" t-key="card.label">
+                        <div class="col-md-4">
+                            <div class="card h-100 shadow-sm border-0" t-att-style="'background: ' + card.bg + '; color: ' + (card.color or '#fff') + ';'">
+                                <div class="card-body">
+                                    <div class="text-uppercase small mb-2 opacity-75"><t t-esc="card.label"/></div>
+                                    <div class="display-6 fw-bold mb-1"><t t-esc="card.value"/></div>
+                                    <div class="small opacity-75"><t t-esc="card.description"/></div>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-header fw-bold bg-white border-0">Report Period</div>
+                            <div class="card-body">
+                                <div><strong>Start:</strong> <t t-esc="this.formatDateOnly(state.report.period.start)"/></div>
+                                <div><strong>End:</strong> <t t-esc="this.formatDateOnly(state.report.period.end)"/></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-header fw-bold bg-white border-0">Invoice Totals</div>
+                            <div class="card-body">
+                                <div><strong>Sales:</strong> <t t-esc="this.formatAmount(state.report.invoice_totals.sale)"/></div>
+                                <div><strong>Refunds:</strong> <t t-esc="this.formatAmount(state.report.invoice_totals.refund)"/></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-header fw-bold bg-white border-0">Payment Types</div>
+                            <div class="card-body py-3">
+                                <t t-foreach="this.paymentEntries" t-as="pay" t-key="pay[0]">
+                                    <div t-att-class="'o_payment_pill o_payment_pill--' + pay[0].replace('_','-')">
+                                        <div class="text-uppercase small opacity-75"><t t-esc="this.labelize(pay[0])"/></div>
+                                        <span><t t-esc="this.formatAmount(pay[1])"/></span>
+                                    </div>
+                                </t>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4 shadow-sm border-0">
+                    <div class="card-header fw-bold">Invoice Counts</div>
+                    <div class="card-body table-responsive">
+                        <table class="table table-sm table-striped table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Invoice Type</th>
+                                    <th class="text-end">Count</th>
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="state.report.invoiceSummary" t-as="entry" t-key="entry.label">
+                                    <tr>
+                                        <td><t t-esc="entry.label"/></td>
+                                        <td class="text-end"><t t-esc="entry.count"/></td>
+                                        <td class="text-end"><t t-esc="this.formatAmount(entry.total)"/></td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0">
+                    <div class="card-header fw-bold">Sold Items</div>
+                    <div class="card-body table-responsive">
+                        <table class="table table-hover table-sm table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Order</th>
+                                    <th>Product</th>
+                                    <th class="text-end">Qty</th>
+                                    <th class="text-end">Unit Price</th>
+                                    <th class="text-end">Tax Rate</th>
+                                    <th class="text-end">Tax Amount</th>
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-if="!(state.report.sold_items and state.report.sold_items.length)">
+                                    <tr>
+                                        <td colspan="9" class="text-center text-muted">No items sold for this period.</td>
+                                    </tr>
+                                </t>
+                                <t t-else="">
+                                    <t t-foreach="this.paginatedSoldItems" t-as="item" t-foreach-index="idx" t-key="item.order_id + '-' + item.product_id + '-' + idx + '-' + state.pagination.page">
+                                        <tr>
+                                            <td><t t-esc="item.order_date or ''"/></td>
+                                            <td><t t-esc="item.order_time or ''"/></td>
+                                            <td><t t-esc="item.order_name"/></td>
+                                            <td><t t-esc="item.product_name"/></td>
+                                            <td class="text-end"><t t-esc="item.qty"/></td>
+                                            <td class="text-end"><t t-esc="this.formatAmount(item.price_unit)"/></td>
+                                            <td class="text-end"><t t-esc="this.formatRate(item.tax_rate)"/></td>
+                                            <td class="text-end"><t t-esc="this.formatAmount(item.tax_amount)"/></td>
+                                            <td class="text-end"><t t-esc="this.formatAmount(item.total)"/></td>
+                                        </tr>
+                                    </t>
+                                </t>
+                            </tbody>
+                        </table>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <span class="text-muted small">
+                                Page <t t-esc="state.pagination.page"/> / <t t-esc="this.soldItemsTotalPages"/>
+                            </span>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-secondary" t-att-disabled="state.pagination.page &lt;= 1" t-on-click="prevSoldItemsPage">
+                                    ‹ Prev
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" t-att-disabled="state.pagination.page &gt;= this.soldItemsTotalPages" t-on-click="nextSoldItemsPage">
+                                    Next ›
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </t>
+</templates>

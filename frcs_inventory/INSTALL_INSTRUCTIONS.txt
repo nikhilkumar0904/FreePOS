@@ -1,0 +1,19 @@
+INSTALLATION INSTRUCTIONS
+=========================
+
+IMPORTANT: Follow these steps exactly to avoid errors.
+
+1. STOP the Odoo service (Windows Services -> Odoo -> Stop)
+
+2. DELETE the old frcs_inventory folder completely from your addons directory:
+   Typically: C:\Program Files\Odoo 18.0.20260331\server\odoo\addons\frcs_inventory\
+   OR wherever you placed it before.
+
+3. COPY the frcs_inventory folder from this zip to your addons directory.
+
+4. START the Odoo service again.
+
+5. In Odoo, go to Apps -> Update Apps List, then find and install frcs_inventory.
+
+DO NOT simply overwrite files - fully delete and replace the folder.
+DO NOT install while the Odoo service is running.

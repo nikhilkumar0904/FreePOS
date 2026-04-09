@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates id="template" xml:space="preserve">
+    <t t-inherit="point_of_sale.Navbar" t-inherit-mode="extension" owl="1">
+
+        <xpath expr="//div[contains(@class,'p-2 pos-burger-menu-items')]" position="replace">
+
+            <DropdownItem onSelected="() => this.pos.showScreen('TicketScreen')">
+                Orders <span t-if="orderCount gt 0" class="badge text-bg-info rounded-pill py-1 ms-2 float-end" t-esc="orderCount"/>
+            </DropdownItem>
+
+            <!-- NEW OPTIONSSS-->
+ 
+            <DropdownItem onSelected="() => this.toggleAdvanceMode()">
+                <t t-if="this.pos.advanceMode">
+                     <span class="posMode">Disable Advance</span>
+                </t>
+                <t t-else="">
+                    Enable Advance
+                </t>
+            </DropdownItem>
+
+            <DropdownItem onSelected="() => this.toggleProformaMode()">
+                <t t-if="this.pos.proformaMode">
+                     <span class="posMode">Disable Proforma</span>
+                </t>
+                <t t-else="">
+                    Enable Proforma
+                </t>
+            </DropdownItem>
+
+            <DropdownItem onSelected="() => this.toggleTrainingMode()">
+                <t t-if="this.pos.trainingMode">
+                   <span class="posMode">Disable Training</span>
+                </t>
+                <t t-else="">
+                    Enable Training
+                </t>
+            </DropdownItem>
+
+
+            <DropdownItem t-if="showCashMoveButton" onSelected="() => this.pos.cashMove()">
+                Cash In/Out
+            </DropdownItem>
+            <DropdownItem t-if="showToggleProductView" onSelected="() => this.toggleProductView()">
+                Switch Product View
+            </DropdownItem>
+            <DropdownItem t-if="showCreateProductButton" onSelected="() => this.pos.editProduct()">
+                Create Product
+            </DropdownItem>
+            <DropdownItem onSelected="() => pos.closePos()">
+                Backend
+            </DropdownItem>
+            <DropdownItem onSelected="() => this.pos.closeSession()">
+                Close Register
+            </DropdownItem>
+            <DropdownItem t-if="this.env.debug" onSelected="() => this.clearCache()">
+                Clear Cache
+            </DropdownItem>
+            <DropdownItem t-if="this.env.debug" onSelected="() => debug.toggleWidget()">
+                Debug Window
+            </DropdownItem>
+                <DropdownItem t-if="!isDisplayStandalone" onSelected="() => window.open(this.appUrl)">
+                Install App
+            </DropdownItem>
+        </xpath>
+    </t>
+</templates>

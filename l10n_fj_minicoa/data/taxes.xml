@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <data>
+
+  <!-- VAT 0% (Sales) -->
+  <record id="tax_458" model="account.tax">
+    <field name="name">VAT 0%</field>
+    <field name="amount">0.0</field>
+    <field name="amount_type">percent</field>
+    <field name="type_tax_use">sale</field>
+    <field name="company_id" ref="base.main_company"/>
+    
+    <field name="country_id" ref="base.fj"/>
+    <field name="price_include">True</field>
+    <field name="tax_group_id" ref="l10n_fj_minicoa.tax_group_vat"/>
+    <field name="invoice_label">B</field>
+    <field name="invoice_repartition_line_ids" eval="[(5,0,0),(0,0,{'repartition_type': 'base', 'factor_percent': 100.0}),(0,0,{'repartition_type': 'tax', 'factor_percent': 100.0})]"/>
+    <field name="refund_repartition_line_ids" eval="[(5,0,0),(0,0,{'repartition_type': 'base', 'factor_percent': 100.0}),(0,0,{'repartition_type': 'tax', 'factor_percent': 100.0})]"/>
+  </record>
+
+  <!-- VAT 0% (Purchase) -->
+  <record id="tax_459" model="account.tax">
+    <field name="name">VAT 0% (purchase)</field>
+    <field name="amount">0.0</field>
+    <field name="amount_type">percent</field>
+    <field name="type_tax_use">purchase</field>
+    <field name="company_id" ref="base.main_company"/>
+    
+    <field name="country_id" ref="base.fj"/>
+    <field name="price_include">True</field>
+    <field name="tax_group_id" ref="l10n_fj_minicoa.tax_group_vat"/>
+    <field name="invoice_label">B</field>
+    <field name="invoice_repartition_line_ids" eval="[(5,0,0),(0,0,{'repartition_type': 'base', 'factor_percent': 100.0}),(0,0,{'repartition_type': 'tax', 'factor_percent': 100.0})]"/>
+    <field name="refund_repartition_line_ids" eval="[(5,0,0),(0,0,{'repartition_type': 'base', 'factor_percent': 100.0}),(0,0,{'repartition_type': 'tax', 'factor_percent': 100.0})]"/>
+  </record>
+
+  <!-- VAT 9% (Sales) -->
+  <record id="tax_470" model="account.tax">
+    <field name="name">VAT 9%</field>
+    <field name="amount">9.0</field>
+    <field name="amount_type">percent</field>
+    <field name="type_tax_use">sale</field>
+    <field name="company_id" ref="base.main_company"/>
+    
+    <field name="country_id" ref="base.fj"/>
+    <field name="price_include">True</field>
+    <field name="tax_group_id" ref="l10n_fj_minicoa.tax_group_vat"/>
+    <field name="invoice_label">A</field>
+    <field name="invoice_repartition_line_ids" eval="[(5,0,0),(0,0,{'repartition_type': 'base', 'factor_percent': 100.0}),(0,0,{'repartition_type': 'tax', 'factor_percent': 100.0})]"/>
+    <field name="refund_repartition_line_ids" eval="[(5,0,0),(0,0,{'repartition_type': 'base', 'factor_percent': 100.0}),(0,0,{'repartition_type': 'tax', 'factor_percent': 100.0})]"/>
+  </record>
+
+  <!-- VAT 9% (Purchase) -->
+  <record id="tax_471" model="account.tax">
+    <field name="name">VAT 9% (purhase)</field>
+    <field name="amount">9.0</field>
+    <field name="amount_type">percent</field>
+    <field name="type_tax_use">purchase</field>
+    <field name="company_id" ref="base.main_company"/>
+    
+    <field name="country_id" ref="base.fj"/>
+    <field name="price_include">True</field>
+    <field name="tax_group_id" ref="l10n_fj_minicoa.tax_group_vat"/>
+    <field name="invoice_label">A</field>
+    <field name="invoice_repartition_line_ids" eval="[(5,0,0),(0,0,{'repartition_type': 'base', 'factor_percent': 100.0}),(0,0,{'repartition_type': 'tax', 'factor_percent': 100.0})]"/>
+    <field name="refund_repartition_line_ids" eval="[(5,0,0),(0,0,{'repartition_type': 'base', 'factor_percent': 100.0}),(0,0,{'repartition_type': 'tax', 'factor_percent': 100.0})]"/>
+  </record>
+
+  <!-- VAT 12.5% (Sales) -->
+  <record id="tax_462" model="account.tax">
+    <field name="name">VAT 12.5%</field>
+    <field name="amount">12.5</field>
+    <field name="amount_type">percent</field>
+    <field name="type_tax_use">sale</field>
+    <field name="company_id" ref="base.main_company"/>
+    
+    <field name="country_id" ref="base.fj"/>
+    <field name="price_include">False</field>
+    <field name="tax_group_id" ref="l10n_fj_minicoa.tax_group_vat"/>
+    <field name="invoice_label">G</field>
+    <field name="invoice_repartition_line_ids" eval="[(5,0,0),(0,0,{'repartition_type': 'base', 'factor_percent': 100.0}),(0,0,{'repartition_type': 'tax', 'factor_percent': 100.0})]"/>
+    <field name="refund_repartition_line_ids" eval="[(5,0,0),(0,0,{'repartition_type': 'base', 'factor_percent': 100.0}),(0,0,{'repartition_type': 'tax', 'factor_percent': 100.0})]"/>
+  </record>
+
+  <!-- VAT 12.5% (Purchase) -->
+  <record id="tax_463" model="account.tax">
+    <field name="name">VAT 12.5% (purchase)</field>
+    <field name="amount">12.5</field>
+    <field name="amount_type">percent</field>
+    <field name="type_tax_use">purchase</field>
+    <field name="company_id" ref="base.main_company"/>
+    
+    <field name="country_id" ref="base.fj"/>
+    <field name="price_include">True</field>
+    <field name="tax_group_id" ref="l10n_fj_minicoa.tax_group_vat"/>
+    <field name="invoice_label">G</field>
+    <field name="invoice_repartition_line_ids" eval="[(5,0,0),(0,0,{'repartition_type': 'base', 'factor_percent': 100.0}),(0,0,{'repartition_type': 'tax', 'factor_percent': 100.0})]"/>
+    <field name="refund_repartition_line_ids" eval="[(5,0,0),(0,0,{'repartition_type': 'base', 'factor_percent': 100.0}),(0,0,{'repartition_type': 'tax', 'factor_percent': 100.0})]"/>
+  </record>
+
+  <!-- VAT 15% (Sales) -->
+  <record id="tax_472" model="account.tax">
+    <field name="name">VAT 15%</field>
+    <field name="amount">15.0</field>
+    <field name="amount_type">percent</field>
+    <field name="type_tax_use">sale</field>
+    <field name="company_id" ref="base.main_company"/>
+    
+    <field name="country_id" ref="base.fj"/>
+    <field name="price_include">True</field>
+    <field name="tax_group_id" ref="l10n_fj_minicoa.tax_group_vat"/>
+    <field name="invoice_label">D</field>
+    <field name="invoice_repartition_line_ids" eval="[(5,0,0),(0,0,{'repartition_type': 'base', 'factor_percent': 100.0}),(0,0,{'repartition_type': 'tax', 'factor_percent': 100.0})]"/>
+    <field name="refund_repartition_line_ids" eval="[(5,0,0),(0,0,{'repartition_type': 'base', 'factor_percent': 100.0}),(0,0,{'repartition_type': 'tax', 'factor_percent': 100.0})]"/>
+  </record>
+
+  <!-- VAT 15% (Purchase) -->
+  <record id="tax_473" model="account.tax">
+    <field name="name">VAT 15% (purchase)</field>
+    <field name="amount">15.0</field>
+    <field name="amount_type">percent</field>
+    <field name="type_tax_use">purchase</field>
+    <field name="company_id" ref="base.main_company"/>
+    
+    <field name="country_id" ref="base.fj"/>
+    <field name="price_include">True</field>
+    <field name="tax_group_id" ref="l10n_fj_minicoa.tax_group_vat"/>
+    <field name="invoice_label">D</field>
+    <field name="invoice_repartition_line_ids" eval="[(5,0,0),(0,0,{'repartition_type': 'base', 'factor_percent': 100.0}),(0,0,{'repartition_type': 'tax', 'factor_percent': 100.0})]"/>
+    <field name="refund_repartition_line_ids" eval="[(5,0,0),(0,0,{'repartition_type': 'base', 'factor_percent': 100.0}),(0,0,{'repartition_type': 'tax', 'factor_percent': 100.0})]"/>
+  </record>
+  
+  </data>
+</odoo>

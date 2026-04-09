@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- Legacy server actions kept for backward compatibility. Now disabled in favor of Bulk Tax Update wizard. -->
+  <!-- Apply FRCS VAT 12.5% (Sales) to selected products -->
+  <record id="action_apply_vat_125_sales" model="ir.actions.server">
+    <field name="name">Apply FRCS VAT 12.5% (Sales)</field>
+    <field name="model_id" ref="product.model_product_template"/>
+    <field name="binding_model_id" ref="product.model_product_template"/>
+    <field name="binding_type">action</field>
+    <field name="state">code</field>
+    <!-- Unbind from the Actions menu instead of using a non-existent 'active' field -->
+    <field name="binding_model_id" eval="False"/>
+    <field name="code"><![CDATA[
+tax = env.ref('l10n_fj_minicoa.tax_frcs_vat_125_sales', raise_if_not_found=False)
+if not tax:
+    tax = env['account.tax'].search([
+        ('type_tax_use', '=', 'sale'),
+        ('amount_type', '=', 'percent'),
+        ('amount', '=', 12.5),
+        ('active', '=', True),
+    ], limit=1)
+if not tax:
+    raise ValueError('FRCS VAT 12.5% (Sales) not found')
+for rec in records:
+    if rec.exists():
+        rec.write({'taxes_id': [(6, 0, [tax.id])]})
+    ]]></field>
+  </record>
+
+  <!-- Apply FRCS VAT 15% (Sales) to selected products -->
+  <record id="action_apply_vat_15_sales" model="ir.actions.server">
+    <field name="name">Apply FRCS VAT 15% (Sales)</field>
+    <field name="model_id" ref="product.model_product_template"/>
+    <field name="binding_model_id" ref="product.model_product_template"/>
+    <field name="binding_type">action</field>
+    <field name="state">code</field>
+    <field name="binding_model_id" eval="False"/>
+    <field name="code"><![CDATA[
+tax = env.ref('l10n_fj_minicoa.tax_frcs_vat_15_sales', raise_if_not_found=False)
+if not tax:
+    tax = env['account.tax'].search([
+        ('type_tax_use', '=', 'sale'),
+        ('amount_type', '=', 'percent'),
+        ('amount', '=', 15.0),
+        ('active', '=', True),
+    ], limit=1)
+if not tax:
+    raise ValueError('FRCS VAT 15% (Sales) not found')
+for rec in records:
+    if rec.exists():
+        rec.write({'taxes_id': [(6, 0, [tax.id])]})
+    ]]></field>
+  </record>
+
+  <!-- Apply FRCS VAT 0% (Sales) to selected products -->
+  <record id="action_apply_vat_0_sales" model="ir.actions.server">
+    <field name="name">Apply FRCS VAT 0% (Sales)</field>
+    <field name="model_id" ref="product.model_product_template"/>
+    <field name="binding_model_id" ref="product.model_product_template"/>
+    <field name="binding_type">action</field>
+    <field name="state">code</field>
+    <field name="binding_model_id" eval="False"/>
+    <field name="code"><![CDATA[
+tax = env.ref('l10n_fj_minicoa.tax_frcs_vat_0_sales', raise_if_not_found=False)
+if not tax:
+    tax = env['account.tax'].search([
+        ('type_tax_use', '=', 'sale'),
+        ('amount_type', '=', 'percent'),
+        ('amount', '=', 0.0),
+        ('active', '=', True),
+    ], limit=1)
+if not tax:
+    raise ValueError('FRCS VAT 0% (Sales) not found')
+for rec in records:
+    if rec.exists():
+        rec.write({'taxes_id': [(6, 0, [tax.id])]})
+    ]]></field>
+  </record>
+
+  <!-- Remove Customer Taxes from selected products -->
+  <record id="action_remove_customer_taxes" model="ir.actions.server">
+    <field name="name">Remove Customer Taxes</field>
+    <field name="model_id" ref="product.model_product_template"/>
+    <field name="binding_model_id" ref="product.model_product_template"/>
+    <field name="binding_type">action</field>
+    <field name="state">code</field>
+    <field name="binding_model_id" eval="False"/>
+    <field name="code"><![CDATA[
+for rec in records:
+    if rec.exists():
+        rec.write({'taxes_id': [(5, 0, 0)]})
+    ]]></field>
+  </record>
+
+  <!-- Preferred: use the Bulk Tax Update wizard bound via tax_bulk_wizard_views.xml -->
+  <!-- Core Bulk Tax Update action for server actions below -->
+  <record id="action_bulk_tax_update" model="ir.actions.act_window">
+    <field name="name">Bulk Tax Update</field>
+    <field name="res_model">tax.bulk.wizard</field>
+    <field name="view_mode">form</field>
+    <field name="target">new</field>
+  </record>
+
+  <!-- New server actions that open the bulk wizard with a preset choice -->
+  <record id="action_apply_vat_0_bulk" model="ir.actions.server">
+    <field name="name">Apply FRCS VAT 0% (Sales)</field>
+    <field name="model_id" ref="product.model_product_template"/>
+    <field name="binding_model_id" eval="False"/>
+    <field name="binding_type">action</field>
+    <field name="state">code</field>
+    <field name="code"><![CDATA[
+action = env.ref('frcs_inventory.action_bulk_tax_update').sudo().read()[0]
+ctx = dict(env.context or {})
+ctx.update({
+    'default_tax_selection': 'vat_0',
+    'active_model': 'product.template',
+    'active_ids': records.ids,
+})
+action['context'] = ctx
+action
+    ]]></field>
+  </record>
+
+  <record id="action_apply_vat_9_bulk" model="ir.actions.server">
+    <field name="name">Apply FRCS VAT 9% (Sales)</field>
+    <field name="model_id" ref="product.model_product_template"/>
+    <field name="binding_model_id" eval="False"/>
+    <field name="binding_type">action</field>
+    <field name="state">code</field>
+    <field name="code"><![CDATA[
+action = env.ref('frcs_inventory.action_bulk_tax_update').sudo().read()[0]
+ctx = dict(env.context or {})
+ctx.update({
+    'default_tax_selection': 'vat_9',
+    'active_model': 'product.template',
+    'active_ids': records.ids,
+})
+action['context'] = ctx
+action
+    ]]></field>
+  </record>
+
+  <record id="action_apply_vat_125_bulk" model="ir.actions.server">
+    <field name="name">Apply FRCS VAT 12.5% (Sales)</field>
+    <field name="model_id" ref="product.model_product_template"/>
+    <field name="binding_model_id" eval="False"/>
+    <field name="binding_type">action</field>
+    <field name="state">code</field>
+    <field name="code"><![CDATA[
+action = env.ref('frcs_inventory.action_bulk_tax_update').sudo().read()[0]
+ctx = dict(env.context or {})
+ctx.update({
+    'default_tax_selection': 'vat_125',
+    'active_model': 'product.template',
+    'active_ids': records.ids,
+})
+action['context'] = ctx
+action
+    ]]></field>
+  </record>
+
+  <record id="action_apply_vat_15_bulk" model="ir.actions.server">
+    <field name="name">Apply FRCS VAT 15% (Sales)</field>
+    <field name="model_id" ref="product.model_product_template"/>
+    <field name="binding_model_id" eval="False"/>
+    <field name="binding_type">action</field>
+    <field name="state">code</field>
+    <field name="code"><![CDATA[
+action = env.ref('frcs_inventory.action_bulk_tax_update').sudo().read()[0]
+ctx = dict(env.context or {})
+ctx.update({
+    'default_tax_selection': 'vat_15',
+    'active_model': 'product.template',
+    'active_ids': records.ids,
+})
+action['context'] = ctx
+action
+    ]]></field>
+  </record>
+
+  <record id="action_remove_taxes_bulk" model="ir.actions.server">
+    <field name="name">Remove Customer Taxes</field>
+    <field name="model_id" ref="product.model_product_template"/>
+    <field name="binding_model_id" eval="False"/>
+    <field name="binding_type">action</field>
+    <field name="state">code</field>
+    <field name="code"><![CDATA[
+action = env.ref('frcs_inventory.action_bulk_tax_update').sudo().read()[0]
+ctx = dict(env.context or {})
+ctx.update({
+    'default_tax_selection': 'remove',
+    'active_model': 'product.template',
+    'active_ids': records.ids,
+})
+action['context'] = ctx
+action
+    ]]></field>
+  </record>
+</odoo>

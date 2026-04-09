@@ -1,0 +1,77 @@
+<odoo>
+  <record id="view_frcs_vsdc_config_list" model="ir.ui.view">
+    <field name="name">frcs.vsdc.config.list</field>
+    <field name="model">frcs.vsdc.config</field>
+    <field name="arch" type="xml">
+      <list string="FRCS V-SDC Settings">
+        <field name="company_id"/>
+        <field name="vsdc_url"/>
+        <field name="pac"/>
+        <field name="accreditation_number"/>
+        <field name="system_version"/>
+        <field name="active"/>
+      </list>
+    </field>
+  </record>
+
+  <record id="view_frcs_vsdc_config_form" model="ir.ui.view">
+    <field name="name">frcs.vsdc.config.form</field>
+    <field name="model">frcs.vsdc.config</field>
+    <field name="arch" type="xml">
+      <form string="FRCS V-SDC Settings">
+        <header>
+          <button name="action_convert_pfx"
+                  string="Convert Certificate"
+                  type="object"
+                  class="btn-primary"
+                  help="Manually extract PEM cert and key from the PFX file"/>
+        </header>
+        <sheet>
+          <group string="Connection">
+            <field name="company_id"/>
+            <field name="vsdc_url"/>
+            <field name="pac"/>
+          </group>
+          <group string="POS Number (Format: accreditation/version)">
+            <field name="accreditation_number"
+                   placeholder="e.g. 74"
+                   help="Your FRCS accreditation number"/>
+            <field name="system_version"
+                   placeholder="e.g. 1.0.0"
+                   help="Your POS system version"/>
+            <field name="cert_status" readonly="1"/>
+          </group>
+          <group string="Certificate">
+            <div class="o_row">
+              <label for="pfx_file" string="PFX Certificate"/>
+              <div class="oe_read_only o_inline">
+                <field name="pfx_filename" readonly="1"/>
+              </div>
+              <div class="oe_edit_only o_inline">
+                <field name="pfx_file" filename="pfx_filename" options="{'no_open': True}"/>
+              </div>
+            </div>
+            <field name="pfx_password" password="True"/>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <record id="action_frcs_vsdc_config" model="ir.actions.act_window">
+    <field name="name">FRCS V-SDC Settings</field>
+    <field name="res_model">frcs.vsdc.config</field>
+    <field name="view_mode">list,form</field>
+    <field name="view_id" ref="view_frcs_vsdc_config_list"/>
+    <field name="views" eval="[(ref('custom_pos.view_frcs_vsdc_config_list'), 'list'), (ref('custom_pos.view_frcs_vsdc_config_form'), 'form')]"/>
+    <field name="target">current</field>
+    <field name="domain">[]</field>
+    <field name="context">{}</field>
+  </record>
+
+  <menuitem id="menu_frcs_root" name="FRCS" parent="point_of_sale.menu_point_root"/>
+  <menuitem id="menu_frcs_vsdc_config"
+            name="V-SDC Settings"
+            parent="menu_frcs_root"
+            action="action_frcs_vsdc_config"/>
+</odoo>

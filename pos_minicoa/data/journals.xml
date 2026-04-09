@@ -1,0 +1,3 @@
+<odoo>
+    <!-- Intentionally left empty. Journals are created/updated in Python hooks/models. -->
+</odoo>

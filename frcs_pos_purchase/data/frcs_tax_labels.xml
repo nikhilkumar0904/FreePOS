@@ -1,0 +1,14 @@
+<odoo>
+    <data noupdate="1">
+        <record id="frcs_tax_label_vat12_5" model="frcs.purchase.tax.label">
+            <field name="code">VAT12_5</field>
+            <field name="name">VAT 12.5%</field>
+            <field name="rate">12.50</field>
+        </record>
+        <record id="frcs_tax_label_vat0" model="frcs.purchase.tax.label">
+            <field name="code">VAT0</field>
+            <field name="name">VAT 0%</field>
+            <field name="rate">0.00</field>
+        </record>
+    </data>
+</odoo>

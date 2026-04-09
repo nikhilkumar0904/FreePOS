@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data>
+    <!-- Root: Supermarket under All -->
+    <record id="frcs_categ_root" model="product.category">
+      <field name="name">Supermarket</field>
+      <field name="parent_id" ref="product.product_category_all"/>
+    </record>
+
+    <!-- Core supermarket categories (all inherit COGS 51000, income 40100) -->
+    <record id="frcs_categ_beverages" model="product.category">
+      <field name="name">Beverages</field>
+      <field name="parent_id" ref="frcs_categ_root"/>
+    </record>
+
+    <record id="frcs_categ_dairy" model="product.category">
+      <field name="name">Dairy</field>
+      <field name="parent_id" ref="frcs_categ_root"/>
+      
+    </record>
+
+    <record id="frcs_categ_snacks" model="product.category">
+      <field name="name">Snacks</field>
+      <field name="parent_id" ref="frcs_categ_root"/>
+      
+    </record>
+
+    <record id="frcs_categ_meat" model="product.category">
+      <field name="name">Meat</field>
+      <field name="parent_id" ref="frcs_categ_root"/>
+      
+    </record>
+
+    <record id="frcs_categ_vegetables" model="product.category">
+      <field name="name">Vegetables</field>
+      <field name="parent_id" ref="frcs_categ_root"/>
+      
+    </record>
+
+    <record id="frcs_categ_fruits" model="product.category">
+      <field name="name">Fruits</field>
+      <field name="parent_id" ref="frcs_categ_root"/>
+      
+    </record>
+
+    <record id="frcs_categ_bakery" model="product.category">
+      <field name="name">Bakery</field>
+      <field name="parent_id" ref="frcs_categ_root"/>
+      
+    </record>
+
+    <record id="frcs_categ_frozen" model="product.category">
+      <field name="name">Frozen Foods</field>
+      <field name="parent_id" ref="frcs_categ_root"/>
+      
+    </record>
+
+    <record id="frcs_categ_household" model="product.category">
+      <field name="name">Household</field>
+      <field name="parent_id" ref="frcs_categ_root"/>
+      
+    </record>
+
+    <record id="frcs_categ_toiletries" model="product.category">
+      <field name="name">Toiletries</field>
+      <field name="parent_id" ref="frcs_categ_root"/>
+      
+    </record>
+
+    <record id="frcs_categ_baby" model="product.category">
+      <field name="name">Baby Products</field>
+      <field name="parent_id" ref="frcs_categ_root"/>
+      
+    </record>
+
+    <record id="frcs_categ_health" model="product.category">
+      <field name="name">Health &amp; Beauty</field>
+      <field name="parent_id" ref="frcs_categ_root"/>
+      
+    </record>
+
+    <record id="frcs_categ_cleaning" model="product.category">
+      <field name="name">Cleaning Supplies</field>
+      <field name="parent_id" ref="frcs_categ_root"/>
+      
+    </record>
+
+    <record id="frcs_categ_others" model="product.category">
+      <field name="name">Others</field>
+      <field name="parent_id" ref="frcs_categ_root"/>
+      
+    </record>
+  </data>

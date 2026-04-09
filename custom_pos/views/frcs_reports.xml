@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pos_fiscal_record_tree" model="ir.ui.view">
+        <field name="name">pos.order.fiscal.record.tree</field>
+        <field name="model">pos.order.fiscal.record</field>
+        <field name="arch" type="xml">
+            <list string="Fiscal Records" create="0" delete="0" edit="0">
+                <field name="received_at"/>
+                <field name="order_id"/>
+                <field name="invoice_number"/>
+                <field name="sdc_invoice"/>
+                <field name="invoice_label"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pos_fiscal_record_search" model="ir.ui.view">
+        <field name="name">pos.order.fiscal.record.search</field>
+        <field name="model">pos.order.fiscal.record</field>
+        <field name="arch" type="xml">
+            <search string="Fiscal Records">
+                <field name="order_id"/>
+                <field name="invoice_number"/>
+                <field name="sdc_invoice"/>
+                <filter name="report_period" string="Report Period" date="received_at"/>
+                <group expand="0" string="Invoice Type">
+                    <filter name="normal_sale" string="Normal Sale" domain="[('invoice_label','=','Normal Sale')]"/>
+                    <filter name="normal_refund" string="Normal Refund" domain="[('invoice_label','=','Normal Refund')]"/>
+                    <filter name="advance_sale" string="Advance Sale" domain="[('invoice_label','=','Advance Sale')]"/>
+                    <filter name="advance_refund" string="Advance Refund" domain="[('invoice_label','=','Advance Refund')]"/>
+                </group>
+                <group expand="0" string="Group By">
+                    <filter name="group_by_invoice_label" string="Invoice Type" context="{'group_by':'invoice_label'}"/>
+                    <filter name="group_by_order" string="POS Order" context="{'group_by':'order_id'}"/>
+                    <filter name="group_by_day" string="Report Day" context="{'group_by':'received_at:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!--Search Records-->
+  
+    
+    <!--Backend Action-->
+    <record id="action_pos_fiscal_reports" model="ir.actions.act_window"> 
+        <field name="name">Fiscal Reports</field>
+        <field name="res_model">pos.order.fiscal.record</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="search_view_id" ref="view_pos_fiscal_record_search"/>
+        <field name="context">{}</field>
+    </record>
+
+    <record id="action_pos_fiscal_reports_client" model="ir.actions.client">
+        <field name="name">Fiscal Reports</field>
+        <field name="tag">custom_pos_fiscal_report</field>
+    </record>
+
+    <!--Menu Item-->
+    <menuitem id="menu_pos_fiscal_reports"
+            name="Fiscal Reports"
+            parent="point_of_sale.menu_point_rep"
+            action="action_pos_fiscal_reports_client"
+            sequence="20"/>
+
+    <!-- Hide default Sales Details and Session Report menus -->
+    <record id="point_of_sale.menu_report_order_details" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('base.group_no_one')])]"/>
+    </record>
+    <record id="point_of_sale.menu_report_daily_details" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('base.group_no_one')])]"/>
+    </record>
+
+</odoo>

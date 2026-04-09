@@ -1,0 +1,7 @@
+<odoo>
+    <menuitem id="menu_chart_of_accounts"
+              name="Chart of Accounts"
+              parent="account.menu_finance_configuration"
+              action="account.action_account_form"/>
+</odoo>
+

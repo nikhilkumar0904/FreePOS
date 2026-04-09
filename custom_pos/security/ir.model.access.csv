@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_pos_order_fiscal_record,pos.order.fiscal.record,model_pos_order_fiscal_record,point_of_sale.group_pos_user,1,0,1,0
+access_pos_print_job_user,pos.print.job user,model_pos_print_job,base.group_user,1,1,1,0
+access_frcs_vsdc_config_manager,frcs.vsdc.config manager,model_frcs_vsdc_config,point_of_sale.group_pos_manager,1,0,0,0
+access_frcs_vsdc_config_admin,frcs.vsdc.config admin,model_frcs_vsdc_config,base.group_system,1,1,1,1

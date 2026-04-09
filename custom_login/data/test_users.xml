@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<data noupdate="1">
+    <record id="user_cashier_test" model="res.users">
+        <field name="name">Cashier Test</field>
+        <field name="login">cashier1</field>
+        <field name="password">cashier1234</field>
+        <field name="groups_id" eval="[(6, 0, [ref('base.group_user')]), (4, ref('custom_login.group_cashier'))]"/>
+    </record>
+</data>

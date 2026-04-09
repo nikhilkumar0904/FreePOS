@@ -1,0 +1,19 @@
+<odoo>
+    <record id="group_admin" model="res.groups">
+        <field name="name">Admin Group</field>
+    </record>
+
+    <record id="group_manager" model="res.groups">
+        <field name="name">Manager Group</field>
+    </record>
+
+    <record id="action_cashier_home" model="ir.actions.act_window">
+        <field name="name">POS Session</field>
+        <field name="res_model">pos.session</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <record id="group_cashier" model="res.groups">
+        <field name="name">Cashier Group</field>
+    </record>
+</odoo>

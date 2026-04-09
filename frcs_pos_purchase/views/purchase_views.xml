@@ -1,0 +1,29 @@
+<odoo>
+    <data>
+        <record id="view_purchase_order_form_frcs_purchase" model="ir.ui.view">
+            <field name="name">purchase.order.form.frcs.purchase</field>
+            <field name="model">purchase.order</field>
+            <field name="inherit_id" ref="purchase.purchase_order_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//sheet/group" position="after">
+                    <group string="Receiving Summary (FRCS)">
+                        <group>
+                            <field name="frcs_qty_ordered" readonly="1"/>
+                            <field name="frcs_qty_received" readonly="1"/>
+                            <field name="frcs_qty_to_receive" readonly="1"/>
+                            <field name="frcs_receive_status" invisible="1"/>
+                        </group>
+                    </group>
+                </xpath>
+                <xpath expr="//sheet/group" position="after">
+                    <group string="FRCS">
+                        <group>
+                            <field name="frcs_vendor_tin" readonly="1"/>
+                            <field name="frcs_vendor_vat_registered" readonly="1"/>
+                        </group>
+                    </group>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>

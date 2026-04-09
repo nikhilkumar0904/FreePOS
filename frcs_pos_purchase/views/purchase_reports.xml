@@ -1,0 +1,30 @@
+<odoo>
+    <data>
+        <record id="action_outstanding_rfqs_frcs" model="ir.actions.act_window">
+            <field name="name">Outstanding RFQs (FRCS)</field>
+            <field name="res_model">purchase.order</field>
+            <field name="view_mode">list,form,pivot,graph</field>
+            <field name="domain">[('state','in',['draft','sent'])]</field>
+        </record>
+        <record id="action_late_receipts_frcs" model="ir.actions.act_window">
+            <field name="name">Late Receipts (FRCS)</field>
+            <field name="res_model">purchase.order</field>
+            <field name="view_mode">list,form,pivot,graph</field>
+            <field name="domain">[('state','in',['purchase','done'])]</field>
+        </record>
+        <menuitem id="menu_frcs_reports_root"
+                  name="FRCS"
+                  parent="purchase.purchase_report_main"
+                  sequence="95"/>
+        <menuitem id="menu_outstanding_rfqs_frcs"
+                  name="Outstanding RFQs (FRCS)"
+                  parent="menu_frcs_reports_root"
+                  action="action_outstanding_rfqs_frcs"
+                  sequence="10"/>
+        <menuitem id="menu_late_receipts_frcs"
+                  name="Late Receipts (FRCS)"
+                  parent="menu_frcs_reports_root"
+                  action="action_late_receipts_frcs"
+                  sequence="20"/>
+    </data>
+</odoo>

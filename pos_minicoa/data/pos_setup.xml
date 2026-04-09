@@ -1,0 +1,3 @@
+<odoo>
+    <!-- Neutralized: POS setup is now handled in Python hooks to avoid XMLID timing issues. -->
+</odoo>

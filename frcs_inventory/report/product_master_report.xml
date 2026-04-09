@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data>
+    <template id="product_master_pdf_tmpl">
+        <t t-call="web.html_container">
+            <h2>FRCS Product Master</h2>
+            <p t-esc="format_datetime(datetime.datetime.now())"/>
+            <table class="table table-sm table-hover o_main_table">
+                <thead>
+                    <tr>
+                        <th>Internal Ref</th>
+                        <th>Name</th>
+                        <th>Barcode</th>
+                        <th>GTIN</th>
+                        <th>FRCS Label</th>
+                        <th>Last Modified By</th>
+                        <th>Last Modified At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <t t-foreach="docs" t-as="p">
+                        <tr>
+                            <td><span t-esc="p.default_code or ''"/></td>
+                            <td><span t-esc="p.display_name"/></td>
+                            <td><span t-esc="p.barcode or ''"/></td>
+                            <td><span t-esc="p.frcs_gtin or ''"/></td>
+                            <td><span t-esc="p.frcs_tax_label or ''"/></td>
+                            <td><span t-esc="p.write_uid and p.write_uid.display_name or ''"/></td>
+                            <td><span t-esc="p.write_date and format_datetime(p.write_date) or ''"/></td>
+                        </tr>
+                    </t>
+                </tbody>
+            </table>
+        </t>
+    </template>
+
+    <record id="product_master_pdf_action" model="ir.actions.report">
+        <field name="name">FRCS Product Master (PDF)</field>
+        <field name="model">product.template</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">frcs_inventory.product_master_pdf_tmpl</field>
+        <field name="report_file">frcs_inventory.product_master_pdf_tmpl</field>
+        <field name="print_report_name">'FRCS_Product_Master_' + (object.display_name or '')</field>
+    </record>
+</data>

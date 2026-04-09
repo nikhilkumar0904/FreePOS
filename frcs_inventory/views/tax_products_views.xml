@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!-- ============================ -->
+    <!--  TAX PRODUCTS MENU & ACTIONS -->
+    <!-- ============================ -->
+
+    <!-- Grouped list view by Tax Category (define before action to avoid forward-ref issues) -->
+    <record id="view_tax_products_tree_grouped" model="ir.ui.view">
+      <field name="name">product.template.tax.products.tree</field>
+      <field name="model">product.template</field>
+      <field name="arch" type="xml">
+        <list string="Tax Products" default_order="tax_category, name">
+          <field name="tax_category" string="Tax Category"/>
+          <field name="categ_id" string="Category" widget="many2one" context="{'show_full_path': False}"/>
+          <field name="name"/>
+          <field name="x_sale_tax_rate" string="Tax %"/>
+          <field name="list_price" string="Sales Price" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+          <field name="standard_price" string="Cost" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+        </list>
+      </field>
+    </record>
+
+    <!-- Search view with precise tax filters (define before action for reliable referencing) -->
+    <record id="view_tax_products_search" model="ir.ui.view">
+        <field name="name">product.template.tax.products.search</field>
+        <field name="model">product.template</field>
+        <field name="arch" type="xml">
+            <search string="Tax Products">
+                <filter name="taxable" string="Taxable Products" domain="[('tax_category','=','taxable')]"/>
+                <filter name="non_taxable" string="Non-Taxable Products" domain="[('tax_category','=','non_taxable')]"/>
+                <field name="categ_id"/>
+                <field name="name"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_tax_products" model="ir.actions.act_window">
+        <field name="name">Tax Products</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="frcs_inventory.view_tax_products_tree_grouped"/>
+        <field name="search_view_id" ref="frcs_inventory.view_tax_products_search"/>
+        <field name="context">{'group_by': 'tax_category'}</field>
+    </record>
+
+    <!-- Place under Inventory → Products -->
+    <menuitem id="menu_tax_products"
+              name="Tax Products"
+              parent="stock.menu_stock_inventory_control"
+              action="action_tax_products"
+              sequence="35"/>
+
+    
+
+</odoo>

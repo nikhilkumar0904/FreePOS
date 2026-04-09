@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Ensure FJD is active -->
+        <record id="base.FJD" model="res.currency">
+            <field name="active" eval="True"/>
+        </record>
+        <!-- Common cross-border partners for Fiji (optional) -->
+        <record id="base.AUD" model="res.currency">
+            <field name="active" eval="True"/>
+        </record>
+        <record id="base.NZD" model="res.currency">
+            <field name="active" eval="True"/>
+        </record>
+    </data>
+</odoo>

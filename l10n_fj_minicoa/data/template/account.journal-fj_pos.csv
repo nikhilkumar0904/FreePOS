@@ -1,0 +1,4 @@
+"id","name","type","code","default_account_id"
+"fj_pos_cash_journal","POS Cash","cash","CSH1","70100"
+"fj_pos_card_journal","POS Card","bank","CRD1","70200"
+"fj_pos_mobile_journal","POS Mobile Money","bank","MBL1","70300"

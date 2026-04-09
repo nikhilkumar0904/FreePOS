@@ -1,0 +1,8 @@
+.o_list_view th[data-name="x_purchase_qty"] .o_column_title {
+  white-space: normal !important; /* allow wrapping so full label is visible */
+}
+
+.o_list_view th[data-name="x_purchase_qty"] {
+  min-width: 140px; /* give the header a bit more room */
+}
+

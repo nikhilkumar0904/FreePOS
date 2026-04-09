@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <!-- Extend PaymentScreen to add 3 fixed payment buttons -->
+    <t t-extend="PaymentScreen">
+        <t t-jquery=".paymentlines-container" t-operation="before">
+            <div style="text-align:center; padding:15px; font-size:18px;">
+                <b>Select Payment Method</b>
+                <div style="margin-top:10px; display:flex; justify-content:center; gap:15px;">
+                    <button class="button highlight"
+                            t-att-style="this.getButtonColor('Cash')"
+                            t-on-click="() => this.addPaymentByName('Cash')">
+                        Cash
+                    </button>
+                    <button class="button highlight"
+                            t-att-style="this.getButtonColor('Card')"
+                            t-on-click="() => this.addPaymentByName('Card')">
+                        Card
+                    </button>
+                    <button class="button highlight"
+                            t-att-style="this.getButtonColor('M-Paisa')"
+                            t-on-click="() => this.addPaymentByName('M-Paisa')">
+                        M-Paisa
+                    </button>
+                </div>
+            </div>
+        </t>
+    </t>
+</templates>

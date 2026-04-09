@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+
+    <!-- Extend the ProductList in POS -->
+    <t t-extend="ProductItem">
+        <t t-jquery=".product-name" t-operation="replace">
+            <div class="product-line">
+                <span class="product-name"><t t-esc="product.display_name"/></span>
+                <span class="product-qty">Qty: <t t-esc="orderline and orderline.get_quantity ? orderline.get_quantity() : ''"/></span>
+                <span class="product-price">Price (Incl. VAT): 
+                    <t t-esc="orderline and orderline.get_display_price ? orderline.get_display_price() : ''"/>
+                </span>
+                <span class="product-tax">VAT: 12.5%</span>
+            </div>
+        </t>
+    </t>
+
+    <!-- Optional: Add a summary at bottom -->
+    <t t-extend="OrderWidget">
+        <t t-jquery=".order-total" t-operation="replace">
+            <div class="order-total">
+                <div class="subtotal">
+                    Subtotal (Excl. VAT):
+                    <t t-esc="order and order.get_total_without_tax ? order.get_total_without_tax().toFixed(2) : ''"/>
+                </div>
+                <div class="tax">
+                    Total VAT (12.5%): 
+                    <t t-esc="order and order.get_total_tax ? order.get_total_tax().toFixed(2) : ''"/>
+                </div>
+                <div class="grand-total">
+                    Grand Total (Incl. VAT): 
+                    <t t-esc="order and order.get_total_with_tax ? order.get_total_with_tax().toFixed(2) : ''"/>
+                </div>
+            </div>
+        </t>
+    </t>
+
+</templates>
+

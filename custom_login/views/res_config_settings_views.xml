@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_custom_login_config_settings" model="ir.ui.view">
+        <field name="name">custom.login.config.settings</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="/form" position="inside">
+                <div class="app_settings_block" data-string="Custom Login" string="Custom Login" data-key="custom_login">
+                    <h2>Custom Login</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-10 o_setting_box">
+                            <div class="o_setting_left_pane"/>
+                            <div class="o_setting_right_pane">
+                                <group>
+                                    <field name="login_page_design"/>
+                                    <field name="login_page_custom_background"/>
+                                    <field name="login_page_background_image"/>
+                                    <field name="login_page_show_logo"/>
+                                    <field name="login_page_logo"/>
+                                    <field name="login_page_show_motto"/>
+                                    <field name="login_page_motto_text"/>
+                                    <field name="login_page_motto_text_color"/>
+                                </group>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>
