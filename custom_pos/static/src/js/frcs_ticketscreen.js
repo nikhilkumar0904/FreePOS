@@ -153,16 +153,19 @@ patch (TicketScreen.prototype, {
                     ? pricePerUnitAfterDiscount / (1 - discountPct / 100)
                     : pricePerUnitAfterDiscount;
 
-                const gtin = line.product?.barcode || line.product?.default_code || null;
+                const gtin = line.product_id?.barcode 
+                    || line.product_id?.frcs_gtin 
+                    || line.product?.product_tmpl_id?.frcs_gtin 
+                    || null;
 
                 return {
-                    GTIN: gtin,
-                    Name: line.get_full_product_name() || "Item",
-                    Quantity: quantity,
-                    Discount: discountPct,
-                    Labels: labels,
+                    gtin: gtin,
+                    name: line.get_full_product_name() || "Item",
+                    quantity: quantity,
+                    discount: discountPct,
+                    labels: labels,
                     unitPrice: Math.abs(unitPriceBeforeDiscount),
-                    TotalAmount: Math.abs(priceWithTax),
+                    totalAmount: Math.abs(priceWithTax),
                 };
             })
         );
@@ -185,8 +188,8 @@ patch (TicketScreen.prototype, {
                 type = "Card";
             }
             return {
-                Amount: line.get_amount(),
-                PaymentType: type,
+                amount: line.get_amount(),
+                paymentType: type,
             };
         });
 
@@ -196,21 +199,21 @@ patch (TicketScreen.prototype, {
         try{
 
             invoicePayload = {
-                DateAndTimeOfIssue: new Date().toISOString(),
-                Cashier: this.pos.get_cashier().name,
-                BD: null,
-                BuyerCostCenterId: null,
+                dateAndTimeOfIssue: new Date().toISOString(),
+                cashier: this.pos.get_cashier().name,
+                buyerId: null,
+                buyerCostCenterId: null,
                 invoiceType: invoice_type,
                 transactionType: transaction_type,
                 payment: paymentTypes,
-                InvoiceNumber: await this.pos.data.call("frcs.vsdc.config", "get_pos_number", [this.pos.company.id]),
-                ReferentDocumentNumber: sdcInvoice,
-                ReferentDocumentDT: referentDocumentDT,
-                Options: {
-                    OmitTextualRepresentation: 0,
-                    OmitQRCodeGen: 0,
+                invoiceNumber: await this.pos.data.call("frcs.vsdc.config", "get_pos_number", [this.pos.company.id]),
+                referentDocumentNumber: sdcInvoice,
+                referentDocumentDT: referentDocumentDT,
+                options: {
+                    omitTextualRepresentation: 0,
+                    omitQRCodeGen: 0,
                 },
-                Items: items,
+                items: items,
             };
 
         } catch (err) {

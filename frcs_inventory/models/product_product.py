@@ -19,6 +19,14 @@ class ProductProduct(models.Model):
         store=True,
     )
 
+    # Expose GTIN to POS via related field on product.product
+    frcs_gtin = fields.Char(
+        related="product_tmpl_id.frcs_gtin",
+        string="GTIN",
+        store=False,
+        readonly=True,
+    )
+
     @api.depends('product_tmpl_id.x_total_price')
     def _compute_x_total_price(self):
         """Safely mirror total price for POS without triggering recursive writes.
@@ -43,6 +51,8 @@ class ProductProduct(models.Model):
             fields_list.append('x_price_incl_tax')
         if 'total_price' not in fields_list:
             fields_list.append('total_price')
+        if 'frcs_gtin' not in fields_list:
+            fields_list.append('frcs_gtin')
         return fields_list
 
     # POS expects 'total_price' as a simple float; bridge template field

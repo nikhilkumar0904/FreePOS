@@ -154,6 +154,12 @@ class ProductTemplate(models.Model):
     # UI-only helper to display fixed product type label
     x_product_type_label = fields.Char(string="Product Type", compute="_compute_product_type_label")
 
+    def _load_pos_data_fields(self, config_id):
+        fields = super()._load_pos_data_fields(config_id)
+        if 'frcs_gtin' not in fields:
+            fields += ['frcs_gtin']
+        return fields
+
     @api.model
     def default_get(self, fields_list):
         res = super().default_get(fields_list)

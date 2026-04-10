@@ -185,13 +185,7 @@ patch(PaymentScreen.prototype, {
         const isProforma = this.pos.proformaMode || order.isProforma?.();
         const isTraining = this.pos.trainingMode || order.isTraining?.();
 
-        const invoiceInput = document.getElementById("invoiceInput");
-        const invoiceOutput = document.getElementById("invoiceOutput");
-        const taxcoreButton = document.getElementById("taxcore_sign_element");
-        if (!invoiceInput || !invoiceOutput || !taxcoreButton) {
-            console.warn("TaxCore input/output elements missing");
-            return super._finalizeValidation(...arguments);
-        }
+        // DOM element check removed - TaxCore API call does not require these elements
 
         const originalOrder =
         this.currentOrder
@@ -209,6 +203,19 @@ patch(PaymentScreen.prototype, {
             "get_sdc_invoice",
             [refundId]
         );
+
+        // Fetch original invoice datetime for referentDocumentDT (required by FRCS for refunds)
+        let referentDT = "";
+        if (refundId) {
+            const rawDT = await this.pos.data.call(
+                "pos.order.fiscal.record",
+                "get_created_time",
+                [refundId]
+            );
+            if (rawDT) {
+                referentDT = new Date(rawDT).toISOString();
+            }
+        }
 
         let refundInvoiceLabel = null;
         if (refundId) {
@@ -230,16 +237,19 @@ patch(PaymentScreen.prototype, {
         const transactionType = ["Sale", "Refund"];
         const resolveInvoiceType = (label) => {
             const normalized = (label || "").trim().toUpperCase();
+            // Counter extensions: NS/NR=Normal, AS/AR=Advance, PS/PR=Proforma, TS/TR=Training
+            // For Advance originals
             if (["AS", "AR", "ADVANCE SALE", "ADVANCE REFUND", "ADVANCE"].includes(normalized)) {
-                return invoiceType[5];
+                return invoiceType[5]; // Advance
             }
-            if (["PS", "PR", "PROFORMA SALE", "PROFORMA REFUND", "PROFORMA"].includes(normalized)) {
-                return invoiceType[4];
-            }
+            // For Training originals
             if (["TS", "TR", "TRAINING SALE", "TRAINING REFUND", "TRAINING"].includes(normalized)) {
-                return invoiceType[3];
+                return invoiceType[3]; // Training
             }
-            return invoiceType[0];
+            // Everything else (NS, NR, PS, PR, blank) = Normal
+            // Proforma sales are converted to normal when finalized,
+            // so their refunds should also be Normal
+            return invoiceType[0]; // Normal
         };
 
         let transaction_type;
@@ -247,7 +257,11 @@ patch(PaymentScreen.prototype, {
         let sdc_invoice = "";
 
         if (isRefund){
-            invoice_type = resolveInvoiceType(refundInvoiceLabel);
+            // invoiceType for refund should match the original sale type
+            // Normal sale -> Normal refund, Advance sale -> Advance refund, etc.
+            // resolveInvoiceType returns "Normal", "Advance", "Proforma", "Training"
+            // but for a standard refund of a normal sale it should be "Normal"
+            invoice_type = resolveInvoiceType(refundInvoiceLabel) || invoiceType[0];
             transaction_type = transactionType[1];
             sdc_invoice = sdcInvoice;
         } else if (isAdvance){
@@ -297,49 +311,67 @@ patch(PaymentScreen.prototype, {
                 const totalAmount = Math.abs(priceWithTax);
 
                 // GTIN: barcode preferred, fallback to internal reference
-                const gtin = line.product?.barcode || line.product?.default_code || null;
+                const prod = line.product_id || line.get_product?.();
+                const gtin = prod?.barcode || prod?.frcs_gtin || null;
 
                 return {
-                    GTIN: gtin,
-                    Name: line.get_full_product_name() || "Item",
-                    Quantity: quantity,
-                    Discount: discountPct,
-                    Labels: labels,
+                    gtin: gtin,
+                    name: line.get_full_product_name() || "Item",
+                    quantity: quantity,
+                    discount: discountPct,
+                    labels: labels,
                     unitPrice: Math.abs(unitPriceBeforeDiscount),
-                    TotalAmount: totalAmount,
+                    totalAmount: totalAmount,
                 };
             })
         )
 
         // Build payment array with full FRCS-required payment types
         const paymentTypes = order.payment_ids.map((line) => {
+            // Payment amount must always be positive - direction is set by transactionType
             return {
-                Amount: line.get_amount(),
-                PaymentType: this._mapPaymentType(line),
+                amount: Math.abs(line.get_amount()),
+                paymentType: this._mapPaymentType(line),
             };
         });
 
         console.log("Payment types sent to TaxCore:", paymentTypes);
+        console.log("REFUND DEBUG - isRefund:", isRefund, "refundId:", refundId, "sdcInvoice:", sdcInvoice, "referentDT:", referentDT);
+        console.log("TaxCore items payload:", JSON.stringify(items, null, 2));
+        console.log("Product barcode debug:", order.get_orderlines().map(l => ({
+            name: l.get_full_product_name(),
+            barcode: l.product_id?.barcode,
+            frcs_gtin: l.product_id?.frcs_gtin,
+        })));
+        // Log the full raw product object to see ALL available fields
+        const firstLine = order.get_orderlines()[0];
+        if (firstLine) {
+            console.log("Full product object keys:", Object.keys(firstLine.product_id || {}));
+            console.log("Full product object:", firstLine.product_id);
+            console.log("line keys:", Object.keys(firstLine));
+            console.log("product_id:", firstLine.product_id);
+            console.log("get_product:", firstLine.get_product?.());
+        }
 
         let invoicePayload;
 
         try {
             invoicePayload = {
-                DateAndTimeOfIssue: new Date().toISOString(),
-                Cashier: this.pos.get_cashier().name,
-                BD: null,
-                BuyerCostCenterId: null,
+                dateAndTimeOfIssue: new Date().toISOString(),
+                cashier: this.pos.get_cashier().name,
+                buyerId: null,
+                buyerCostCenterId: null,
                 invoiceType: invoice_type,
                 transactionType: transaction_type,
                 payment: paymentTypes,
-                InvoiceNumber: posNumber,   // FIXED: now "74/1.0.0" format
-                ReferentDocumentNumber: sdc_invoice,
-                ReferentDocumentDT: "",
-                Options: {
-                    OmitTextualRepresentation: 0,
-                    OmitQRCodeGen: 0,
+                invoiceNumber: posNumber,   // FIXED: now "74/1.0.0" format
+                referentDocumentNumber: sdc_invoice,
+                referentDocumentDT: referentDT,
+                options: {
+                    omitTextualRepresentation: 0,
+                    omitQRCodeGen: 0,
                 },
-                Items: items,
+                items: items,
             };
         } catch (err) {
             console.error("Taxcore payload build failed: ", err);
