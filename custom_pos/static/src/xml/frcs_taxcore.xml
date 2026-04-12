@@ -59,20 +59,23 @@
         <xpath expr="//div[contains(@class, 'pos-receipt')]" position="replace">
             <t t-set="taxcore" t-value="props.data and props.data.taxcore_response"/>
             <t t-if="taxcore">
-                <div class="taxcore-receipt-block mt-3">         
+                <div class="taxcore-receipt-block mt-3" style="width:100%;overflow-x:hidden;">
                     <t t-if="taxcore.journal_before_end">
                         <t t-foreach="taxcore.journal_before_end" t-as="line" t-key="line.idx">
-                            <pre class="journal-text"><t t-esc="line.text"/></pre>
+                            <pre class="journal-text" style="font-family:'Courier New',Courier,monospace;font-size:12px;line-height:1.4;margin:0;padding:0;white-space:pre-wrap;word-break:break-all;text-align:center;"><t t-esc="line.text"/></pre>
                         </t>
                     </t>
 
                     <t t-if="taxcore.verificationQRCode">
-                        <img class="pos-receipt-qrcode mt-3"
-                            t-att-src="'data:image/png;base64,' + taxcore.verificationQRCode"/>
+                        <div style="text-align:center;">
+                            <img class="pos-receipt-qrcode mt-3"
+                                style="display:inline-block;"
+                                t-att-src="'data:image/png;base64,' + taxcore.verificationQRCode"/>
+                        </div>
                     </t>
 
                     <t t-if="taxcore.journal_end_line">
-                        <pre><t t-esc="'\n' + taxcore.journal_end_line"/></pre>
+                        <pre style="font-family:'Courier New',Courier,monospace;font-size:12px;text-align:center;margin:0;padding:0;"><t t-esc="'\n' + taxcore.journal_end_line"/></pre>
                     </t>
 
                 </div>

@@ -144,10 +144,13 @@ def post_init_setup(env_or_cr, registry=None):
                         'company_id': company.id,
                         'tax_group_id': group.id,
                         'active': True,
-                        'price_include': False,
+                        'price_include': True,
                     })
                     _logger.info("  created %s %.1f%% tax id=%s", use, rate, keep.id)
 
+                # Set price_include=True for all Fiji taxes (prices include VAT)
+                if not keep.price_include:
+                    keep.price_include = True
                 # ALWAYS normalize repartition lines (fixes the “exactly one base line” error)
                 normalize_repartition_lines(keep)
                 # Then assign accounts to the tax lines
@@ -167,5 +170,9 @@ def post_init_setup(env_or_cr, registry=None):
             vals['account_purchase_tax_id'] = purch_0.id
         if vals:
             company.write(vals)
+
+        # Set tax-inclusive pricing as default for Fiji (prices include VAT)
+        IrConfig = env['ir.config_parameter'].sudo()
+        IrConfig.set_param('account.show_line_subtotals_tax_selection', 'tax_included')
 
     _logger.info("Fiji post-install setup complete.")
