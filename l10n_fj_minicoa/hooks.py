@@ -94,10 +94,18 @@ def post_init_setup(env_or_cr, registry=None):
 
     for company in Company.search([]):
         _logger.info("Configuring %s", company.name)
+        update_vals = {}
         if fj_country and not company.country_id:
-            company.write({'country_id': fj_country.id})
+            update_vals['country_id'] = fj_country.id
         if fjd and company.currency_id != fjd:
-            company.write({'currency_id': fjd.id})
+            update_vals['currency_id'] = fjd.id
+        # account_fiscal_country_id is what Odoo uses for tax validation
+        # Must match the tax country or billing/invoicing will fail
+        if fj_country and company.account_fiscal_country_id != fj_country:
+            update_vals['account_fiscal_country_id'] = fj_country.id
+        if update_vals:
+            company.write(update_vals)
+            _logger.info("  updated company %s: %s", company.name, list(update_vals.keys()))
 
         group = ensure_tax_group(company)
 

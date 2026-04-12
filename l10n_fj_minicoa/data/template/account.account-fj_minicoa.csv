@@ -3,7 +3,7 @@
 "receivable","11200","Trade Debtors","asset_receivable","","","True",""
 "payable","21200","Trade Creditors","liability_payable","","","True",""
 "fj_21310","21310","VAT Collected","liability_payable","","","True","True"
-"fj_21330","21330","VAT Paid","asset_receivable","","","True","True"
+"fj_21330","21330","VAT Paid","asset_current","","","True","True"
 "fj_39999","39999","Historical Balancing","equity","","","False",""
 "income","40000","Sales","income","","","False",""
 "expense","50000","Purchases","expense","","","False",""

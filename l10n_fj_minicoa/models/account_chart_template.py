@@ -15,9 +15,14 @@ class AccountChartTemplate(models.AbstractModel):
             return super()._load(template_code, company, install_demo, force_create)
 
         fjd = self.env['res.currency'].search([('name', '=', 'FJD')], limit=1)
+        fj_country = self.env.ref('base.fj', raise_if_not_found=False)
         if fjd and fiji.currency_id != fjd:
             fiji.currency_id = fjd.id
             _logger.info("Set company %s currency to FJD", fiji.name)
+        # Set fiscal country - critical for tax validation on invoices/bills
+        if fj_country and fiji.account_fiscal_country_id != fj_country:
+            fiji.account_fiscal_country_id = fj_country.id
+            _logger.info("Set company %s fiscal country to Fiji", fiji.name)
 
 
 

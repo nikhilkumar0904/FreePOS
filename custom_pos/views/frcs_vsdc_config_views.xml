@@ -7,8 +7,7 @@
         <field name="company_id"/>
         <field name="vsdc_url"/>
         <field name="pac"/>
-        <field name="accreditation_number"/>
-        <field name="system_version"/>
+        <field name="cert_status"/>
         <field name="active"/>
       </list>
     </field>
@@ -32,13 +31,7 @@
             <field name="vsdc_url"/>
             <field name="pac"/>
           </group>
-          <group string="POS Number (Format: accreditation/version)">
-            <field name="accreditation_number"
-                   placeholder="e.g. 74"
-                   help="Your FRCS accreditation number"/>
-            <field name="system_version"
-                   placeholder="e.g. 1.0.0"
-                   help="Your POS system version"/>
+          <group string="Certificate Status">
             <field name="cert_status" readonly="1"/>
           </group>
           <group string="Certificate">
