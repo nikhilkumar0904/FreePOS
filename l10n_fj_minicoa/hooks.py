@@ -14,8 +14,15 @@ def pre_init_hook(cr_or_env):
     Tax = env['account.tax']
     Company = env['res.company']
 
-    # Archive duplicate active VAT rates for Fiji if there are more than 2 per rate/type
-    for rate in (0.0, 9.0, 12.5, 15.0):
+    # Archive duplicate active VAT rates for Fiji
+    # Find all unique rates and deduplicate per rate/type
+    all_rates = Tax.search([
+        ('country_id.code', '=', 'FJ'),
+        ('amount_type', '=', 'percent'),
+        ('type_tax_use', 'in', ['sale', 'purchase']),
+        ('active', '=', True),
+    ]).mapped('amount')
+    for rate in set(all_rates):
         dups = Tax.search([
             ('country_id.code', '=', 'FJ'),
             ('amount_type', '=', 'percent'),
@@ -42,11 +49,11 @@ def post_init_setup(env_or_cr, registry=None):
     Tax = env['account.tax']
     TaxGroup = env['account.tax.group']
     Account = env['account.account']
-    label_map = {
+    # Label map is now fetched from TaxCore via sync_tax_rates_from_taxcore()
+    # This is only a fallback used if TaxCore is unavailable during install
+    fallback_label_map = {
         0.0: 'G',
-        9.0: 'B',
         12.5: 'A',
-        15.0: 'A',
     }
 
     # Helper: ensure one FRCS VAT tax group PER COMPANY
@@ -118,56 +125,60 @@ def post_init_setup(env_or_cr, registry=None):
 
         acc_collected = Account.search(domain_collected, limit=1)
         acc_paid = Account.search(domain_paid, limit=1)
-        # Ensure each (rate, use) exists once; normalize repartition; set accounts
-        for rate in (0.0, 9.0, 12.5, 15.0):
-            for use in ('sale', 'purchase'):
-                taxes = Tax.search([
-                    ('company_id', '=', company.id),
-                    ('type_tax_use', '=', use),
-                    ('amount_type', '=', 'percent'),
-                    ('amount', '=', rate),
-                ], order='id asc')
+        # Normalize all existing taxes for this company
+        # Rates are NOT hardcoded - they come from TaxCore via sync_tax_rates_from_taxcore()
+        # We only create minimal default taxes if none exist at all
+        existing_taxes = Tax.search([
+            ('company_id', '=', company.id),
+            ('amount_type', '=', 'percent'),
+        ])
 
-                if taxes:
-                    # Keep the first, archive extras
-                    keep = taxes[0]
-                    extras = taxes[1:]
-                    if extras:
-                        extras.write({'active': False})
-                        _logger.info("  archived duplicates for %s %.1f%%: %s", use, rate, extras.ids)
-                else:
-                    keep = Tax.create({
-                        'name': f"VAT {rate}% ({'Sales' if use == 'sale' else 'Purchase'})",
-                        'type_tax_use': use,
-                        'amount_type': 'percent',
-                        'amount': rate,
-                        'company_id': company.id,
-                        'tax_group_id': group.id,
-                        'active': True,
-                        'price_include': True,
-                    })
-                    _logger.info("  created %s %.1f%% tax id=%s", use, rate, keep.id)
+        if not existing_taxes:
+            # Create minimal defaults only on fresh install with no taxes
+            for rate, use in [(0.0, 'sale'), (0.0, 'purchase'), (12.5, 'sale'), (12.5, 'purchase')]:
+                Tax.create({
+                    'name': f"VAT {rate}% ({'Sales' if use == 'sale' else 'Purchase'})",
+                    'type_tax_use': use,
+                    'amount_type': 'percent',
+                    'amount': rate,
+                    'company_id': company.id,
+                    'tax_group_id': group.id,
+                    'active': True,
+                    'price_include': True,
+                    'invoice_label': fallback_label_map.get(rate, 'G'),
+                })
+                _logger.info("  created minimal default %s %.1f%% tax", use, rate)
+            existing_taxes = Tax.search([('company_id', '=', company.id), ('amount_type', '=', 'percent')])
 
-                # Set price_include=True for all Fiji taxes (prices include VAT)
-                if not keep.price_include:
-                    keep.price_include = True
-                # ALWAYS normalize repartition lines (fixes the “exactly one base line” error)
-                normalize_repartition_lines(keep)
-                # Then assign accounts to the tax lines
-                set_tax_accounts(keep, acc_collected, acc_paid)
-                # Apply FRCS invoice label (A/B/G)
-                label = label_map.get(rate)
-                if label and keep.invoice_label != label:
+        # Normalize all taxes - fix repartition lines, accounts, price_include
+        for keep in existing_taxes:
+            if not keep.price_include:
+                keep.price_include = True
+            normalize_repartition_lines(keep)
+            set_tax_accounts(keep, acc_collected, acc_paid)
+            # Apply fallback label only if no label set
+            if not keep.invoice_label:
+                label = fallback_label_map.get(keep.amount)
+                if label:
                     keep.invoice_label = label
-
-        # Company defaults (pick the 12.5% ones if present, else 0%)
-        sale_125 = Tax.search([('company_id', '=', company.id), ('type_tax_use', '=', 'sale'), ('amount', '=', 12.5)], limit=1)
-        purch_0 = Tax.search([('company_id', '=', company.id), ('type_tax_use', '=', 'purchase'), ('amount', '=', 0.0)], limit=1)
+        # Company defaults - use highest rate sale tax and lowest rate purchase tax
+        sale_taxes = Tax.search([
+            ('company_id', '=', company.id),
+            ('type_tax_use', '=', 'sale'),
+            ('amount_type', '=', 'percent'),
+            ('active', '=', True),
+        ], order='amount desc')
+        purch_taxes = Tax.search([
+            ('company_id', '=', company.id),
+            ('type_tax_use', '=', 'purchase'),
+            ('amount_type', '=', 'percent'),
+            ('active', '=', True),
+        ], order='amount asc')
         vals = {}
-        if sale_125:
-            vals['account_sale_tax_id'] = sale_125.id
-        if purch_0:
-            vals['account_purchase_tax_id'] = purch_0.id
+        if sale_taxes:
+            vals['account_sale_tax_id'] = sale_taxes[0].id
+        if purch_taxes:
+            vals['account_purchase_tax_id'] = purch_taxes[0].id
         if vals:
             company.write(vals)
 
@@ -208,5 +219,20 @@ def post_init_setup(env_or_cr, registry=None):
         if len(duplicates) > 1:
             duplicates[1:].write({'active': False})
             _logger.info("Archived %s duplicate Trade Debtors accounts", len(duplicates) - 1)
+
+    # Attempt to sync tax rates from TaxCore
+    # Requires V-SDC config to be already set up - will silently skip if not
+    try:
+        config = env['frcs.vsdc.config'].search([], limit=1)
+        if config and config.vsdc_url:
+            result = env['taxcore.client'].sync_tax_rates_from_taxcore()
+            if result.get('success'):
+                _logger.info("Post-install TaxCore tax sync complete: %s", result.get('synced'))
+            else:
+                _logger.info("Post-install TaxCore sync skipped: %s", result.get('error'))
+        else:
+            _logger.info("Post-install TaxCore sync skipped: no V-SDC config yet")
+    except Exception as e:
+        _logger.info("Post-install TaxCore sync not available: %s", e)
 
     _logger.info("Fiji post-install setup complete.")
