@@ -146,6 +146,40 @@ class FrcsVsdcConfig(models.Model):
                     "- The certificate was issued by FRCS"
                 )
 
+    def action_sync_tax_rates(self):
+        """Fetch tax rates from TaxCore and sync into Odoo taxes."""
+        result = self.env['taxcore.client'].sync_tax_rates_from_taxcore()
+
+        if result.get('success'):
+            synced = result.get('synced', [])
+            labels = result.get('labels', {})
+            label_summary = ', '.join(
+                f"{l}={info['rate']}% ({info['name']})"
+                for l, info in labels.items()
+            )
+            msg = (
+                f"Tax rates synced from TaxCore.
+"
+                f"Available: {label_summary}
+"
+                f"Updated: {', '.join(synced) if synced else 'none (already up to date)'}"
+            )
+            msg_type = "success"
+        else:
+            msg = f"Failed to sync tax rates: {result.get('error', 'Unknown error')}"
+            msg_type = "danger"
+
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": "TaxCore Tax Sync",
+                "message": msg,
+                "type": msg_type,
+                "sticky": True,
+            },
+        }
+
     @api.model
     def get_pos_number(self, company_id=None):
         """Return the POS number in FRCS required format: accreditation/version

@@ -24,6 +24,11 @@
                   type="object"
                   class="btn-primary"
                   help="Manually extract PEM cert and key from the PFX file"/>
+          <button name="action_sync_tax_rates"
+                  string="Sync Tax Rates from TaxCore"
+                  type="object"
+                  class="btn-secondary"
+                  help="Fetch current tax rates from TaxCore /api/v3/tax-rates and update Odoo taxes"/>
         </header>
         <sheet>
           <group string="Connection">

@@ -124,3 +124,103 @@ class TaxCoreClient(models.AbstractModel):
 
         _logger.info("TaxCore: success!")
         return response.json()
+    @api.model
+    def get_tax_groups(self):
+        """Fetch tax rates from TaxCore V3 API endpoint /api/v3/tax-rates.
+        Per FRCS spec: No authentication required for this endpoint.
+        Only needs the V-SDC URL from config.
+        """
+        company = self.env.company
+        config = self.env["frcs.vsdc.config"].search(
+            [("company_id", "=", company.id), ("active", "=", True)],
+            limit=1,
+        )
+        if not config:
+            raise Exception("FRCS V-SDC configuration not found for this company.")
+
+        url = config.vsdc_url.rstrip("/") + "/api/v3/tax-rates"
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Accept-Language": "en-US",
+        }
+
+        _logger.info("Fetching tax rates from TaxCore: %s", url)
+
+        try:
+            response = requests.get(url, headers=headers, timeout=20)
+        except requests.RequestException as e:
+            raise Exception(f"Network error contacting TaxCore: {e}")
+
+        if not response.ok:
+            body = response.text
+            _logger.error("TaxCore tax-rates call failed (%s): %s", response.status_code, body)
+            raise Exception(f"TaxCore API error ({response.status_code}): {body}")
+
+        return response.json()
+
+    @api.model
+    def sync_tax_rates_from_taxcore(self):
+        """Fetch tax rates from TaxCore /api/v3/tax-rates and sync into Odoo taxes.
+
+        Response structure:
+        {
+          "currentTaxRates": [{
+            "taxCategories": [{
+              "name": "VAT",
+              "taxRates": [{"rate": 12.5, "label": "A"}, ...]
+            }]
+          }]
+        }
+        """
+        try:
+            response = self.get_tax_groups()
+        except Exception as e:
+            _logger.error("Failed to fetch tax rates from TaxCore: %s", e)
+            return {'success': False, 'error': str(e)}
+
+        if not response:
+            return {'success': False, 'error': 'No response from TaxCore'}
+
+        current_groups = response.get('currentTaxRates', [])
+        if not current_groups:
+            return {'success': False, 'error': 'No currentTaxRates in response'}
+
+        # Use the first (most recent) current tax rate group
+        current = current_groups[0]
+        tax_categories = current.get('taxCategories', [])
+
+        Tax = self.env['account.tax'].sudo()
+        company = self.env.company
+        synced = []
+        all_labels = {}
+
+        # Build flat map of label -> rate from all tax categories
+        for category in tax_categories:
+            cat_name = category.get('name', '')
+            for tax_rate in category.get('taxRates', []):
+                label = tax_rate.get('label')
+                rate = tax_rate.get('rate', 0.0)
+                if label:
+                    all_labels[label] = {'rate': float(rate), 'name': cat_name}
+
+        _logger.info("TaxCore returned labels: %s", all_labels)
+
+        # Sync each label to matching Odoo taxes by invoice_label
+        for label, info in all_labels.items():
+            rate = info['rate']
+            taxes = Tax.search([
+                ('company_id', '=', company.id),
+                ('invoice_label', '=', label),
+                ('amount_type', '=', 'percent'),
+            ])
+            for tax in taxes:
+                if tax.amount != rate:
+                    tax.write({'amount': rate})
+                    _logger.info("Updated tax label %s: %s%%", label, rate)
+                    synced.append(f"{label}={rate}%")
+                else:
+                    _logger.info("Tax label %s already at %s%% - no change", label, rate)
+
+        _logger.info("TaxCore tax sync complete. Updated: %s", synced or "none")
+        return {'success': True, 'synced': synced, 'labels': all_labels}
