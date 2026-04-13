@@ -79,13 +79,8 @@ patch (TicketScreen.prototype, {
         const order = this.getSelectedOrder();
         const isRefund = order?.getHasRefundLines?.() || false;
 
-        console.log("COPY RFUNNDDDDD" + isRefund);
-
         if (!order) {
-            this.notification.add(
-                this.env._t("Select an order first"), 
-                { type: "warning" }
-            );
+            this._notify(_t("Select an order first"), "warning");
 
             return;
         }
@@ -104,10 +99,7 @@ patch (TicketScreen.prototype, {
         );
 
         if (!invoiceId) {
-            this.notification.add (
-                this.env._t("No stored fiscal payload for this order"),
-                {type: danger}
-            );
+            this._notify(_t("No stored fiscal payload for this order"), "danger");
 
             return;
         }
@@ -153,10 +145,7 @@ patch (TicketScreen.prototype, {
                     ? pricePerUnitAfterDiscount / (1 - discountPct / 100)
                     : pricePerUnitAfterDiscount;
 
-                const gtin = line.product_id?.barcode 
-                    || line.product_id?.frcs_gtin 
-                    || line.product?.product_tmpl_id?.frcs_gtin 
-                    || null;
+                const gtin = line.product_id?.barcode || line.product_id?.frcs_gtin || null;
 
                 return {
                     gtin: gtin,
@@ -188,7 +177,7 @@ patch (TicketScreen.prototype, {
                 type = "Card";
             }
             return {
-                amount: line.get_amount(),
+                amount: Math.abs(line.get_amount()),
                 paymentType: type,
             };
         });
@@ -208,10 +197,10 @@ patch (TicketScreen.prototype, {
                 payment: paymentTypes,
                 invoiceNumber: await this.pos.data.call("frcs.vsdc.config", "get_pos_number", [this.pos.company.id]),
                 referentDocumentNumber: sdcInvoice,
-                referentDocumentDT: referentDocumentDT,
+                referentDocumentDT: referentDocumentDT ? new Date(referentDocumentDT).toISOString() : "",
                 options: {
-                    omitTextualRepresentation: 0,
-                    omitQRCodeGen: 0,
+                    omitTextualRepresentation: "0",
+                    omitQRCodeGen: "1",
                 },
                 items: items,
             };
@@ -226,24 +215,35 @@ patch (TicketScreen.prototype, {
             console.log("TaxCore response", taxcoreResponse);
         } catch (error) {
             console.error("TaxCore RPC failed", error);
-            this.notification.add(
-                _t("Failed to sign invoice with TaxCore: %s", error.message || error),
-                { type: "danger" }
-            );
+            this._notify(_t("Failed to sign invoice with TaxCore: %s", error.message || error), "danger");
             return; 
         }
         if (!taxcoreResponse || !taxcoreResponse.invoiceNumber) {
             console.error("TaxCore returned no SDC Invoice Number", taxcoreResponse);
-            this.notification.add(_t("No SDC Invoice returned by TaxCore; order not saved."), { type: "danger" });
+            this._notify(_t("No SDC Invoice returned by TaxCore; order not saved."), "danger");
             return;
         }
         order.setTaxCoreResponse(taxcoreResponse);
 
+        // Set the order as current
         if (this.pos.get_order().uuid !== order.uuid) {
             this.pos.set_order(order);
         }
 
-        this.pos.showScreen("ReceiptScreen");
+        // Show success notification
+        this._notify(
+            _t("Copy invoice signed successfully. Invoice: %s", taxcoreResponse.invoiceNumber),
+            "success"
+        );
+
+        // Navigate to receipt screen after DOM is ready
+        // Use nextTick + timeout to ensure OWL has rendered before receipt tries to print
+        await new Promise(resolve => setTimeout(resolve, 300));
+        try {
+            this.pos.showScreen("ReceiptScreen");
+        } catch (err) {
+            console.warn("Could not navigate to receipt screen:", err);
+        }
 
 
 
@@ -327,6 +327,31 @@ patch (TicketScreen.prototype, {
         this.pos.showScreen("ProductScreen");
     },
 
+    // Override built-in ticket screen print to prevent cloneNode null error
+    // The standard print tries to clone a receipt DOM element that doesn't exist
+    // for historical orders in the ticket screen context
+    async print() {
+        const order = this.getSelectedOrder();
+        if (!order) {
+            this._notify(_t("Select an order first."), "warning");
+            return;
+        }
+        try {
+            await super.print(...arguments);
+        } catch (err) {
+            if (err?.message?.includes('cloneNode') || err instanceof TypeError) {
+                // Receipt DOM not available in ticket screen context
+                // Navigate to receipt screen instead so it can render properly
+                if (this.pos.get_order().uuid !== order.uuid) {
+                    this.pos.set_order(order);
+                }
+                this.pos.showScreen("ReceiptScreen");
+            } else {
+                throw err;
+            }
+        }
+    },
+
 });
 
 patch (ActionpadWidget.prototype, {
@@ -342,7 +367,7 @@ patch(ProductScreen.prototype, {
     async addProductToOrder() {
         const order = this.pos.get_order();
         if (order?.isProcessingLocked?.()) {
-            this.notification.add(
+            this._notify(
                 _t("Cannot add products while processing this sale."),
                 { type: "warning" }
             );

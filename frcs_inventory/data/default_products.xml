@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Default Deposit product for Advance Sale prepayments -->
+        <!-- noupdate="1" = only created on fresh install, never overwritten on upgrade -->
+        <record id="product_deposit" model="product.template">
+            <field name="name">Deposit</field>
+            <field name="type">service</field>
+            <field name="available_in_pos">True</field>
+            <field name="list_price">0.0</field>
+            <field name="standard_price">0.0</field>
+            <field name="sale_ok">True</field>
+            <field name="purchase_ok">False</field>
+            <field name="description_sale">Advance deposit / prepayment for goods or services not yet delivered</field>
+            <field name="frcs_tax_label">G</field>
+        </record>
+    </data>
+</odoo>

@@ -175,4 +175,38 @@ def post_init_setup(env_or_cr, registry=None):
         IrConfig = env['ir.config_parameter'].sudo()
         IrConfig.set_param('account.show_line_subtotals_tax_selection', 'tax_included')
 
+    # Fix account 213300 VAT Paid — must be asset_current not asset_receivable
+    # Using asset_receivable causes "account used in purchase operation" error on billing
+    vat_paid = env['account.account'].search([('code', '=', '21330')], limit=1)
+    if vat_paid and vat_paid.account_type == 'asset_receivable':
+        vat_paid.write({'account_type': 'asset_current', 'reconcile': False})
+        _logger.info("Fixed account 21330 VAT Paid: asset_receivable -> asset_current")
+
+    # Fix fiscal country — must be set or tax validation fails on invoices/bills
+    fj = env.ref('base.fj', raise_if_not_found=False)
+    for company in Company.search([]):
+        if fj and company.account_fiscal_country_id != fj:
+            company.write({'account_fiscal_country_id': fj.id})
+            _logger.info("Fixed fiscal country to Fiji for %s", company.name)
+
+    # Set POS receivable account (required for session closing)
+    for company in Company.search([]):
+        if not company.account_default_pos_receivable_account_id:
+            receivable = env['account.account'].search([
+                ('code', '=', '11200'),
+                ('account_type', '=', 'asset_receivable'),
+            ], limit=1)
+            if receivable:
+                company.write({'account_default_pos_receivable_account_id': receivable.id})
+                _logger.info("Set POS receivable account to %s for %s", receivable.name, company.name)
+
+        # Clean up duplicate 11200 accounts
+        duplicates = env['account.account'].search([
+            ('code', '=', '11200'),
+            ('account_type', '=', 'asset_receivable'),
+        ], order='id asc')
+        if len(duplicates) > 1:
+            duplicates[1:].write({'active': False})
+            _logger.info("Archived %s duplicate Trade Debtors accounts", len(duplicates) - 1)
+
     _logger.info("Fiji post-install setup complete.")

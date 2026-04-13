@@ -172,6 +172,31 @@ patch(PaymentScreen.prototype, {
         return "Card";
     },
 
+    // Filter payment methods based on current mode:
+    // Training mode: show only Training method
+    // Proforma mode: show only Proforma method
+    // Normal/Advance mode: hide Training and Proforma methods
+    get filteredPaymentMethods() {
+        const methods = this.pos.config.payment_method_ids || [];
+        const isTraining = this.pos.trainingMode;
+        const isProforma = this.pos.proformaMode;
+        if (isTraining) {
+            const trainingMethods = methods.filter(m => m.name === "Training");
+            return trainingMethods.length ? trainingMethods : methods;
+        }
+        if (isProforma) {
+            const proformaMethods = methods.filter(m => m.name === "Proforma");
+            return proformaMethods.length ? proformaMethods : methods;
+        }
+        // Normal/Advance: hide Training and Proforma
+        return methods.filter(m => m.name !== "Training" && m.name !== "Proforma");
+    },
+
+    // Override Odoo's payment method getter used by PaymentScreenMethods component
+    get paymentMethodsFiltered() {
+        return this.filteredPaymentMethods;
+    },
+
     async _finalizeValidation() {
         const order = this.currentOrder;
         if (!order) {
@@ -238,17 +263,16 @@ patch(PaymentScreen.prototype, {
         const resolveInvoiceType = (label) => {
             const normalized = (label || "").trim().toUpperCase();
             // Counter extensions: NS/NR=Normal, AS/AR=Advance, PS/PR=Proforma, TS/TR=Training
-            // For Advance originals
             if (["AS", "AR", "ADVANCE SALE", "ADVANCE REFUND", "ADVANCE"].includes(normalized)) {
                 return invoiceType[5]; // Advance
             }
-            // For Training originals
+            if (["PS", "PR", "PROFORMA SALE", "PROFORMA REFUND", "PROFORMA"].includes(normalized)) {
+                return invoiceType[4]; // Proforma
+            }
             if (["TS", "TR", "TRAINING SALE", "TRAINING REFUND", "TRAINING"].includes(normalized)) {
                 return invoiceType[3]; // Training
             }
-            // Everything else (NS, NR, PS, PR, blank) = Normal
-            // Proforma sales are converted to normal when finalized,
-            // so their refunds should also be Normal
+            // NS, NR, or anything else = Normal
             return invoiceType[0]; // Normal
         };
 
@@ -336,22 +360,9 @@ patch(PaymentScreen.prototype, {
         });
 
         console.log("Payment types sent to TaxCore:", paymentTypes);
-        console.log("REFUND DEBUG - isRefund:", isRefund, "refundId:", refundId, "sdcInvoice:", sdcInvoice, "referentDT:", referentDT);
-        console.log("TaxCore items payload:", JSON.stringify(items, null, 2));
-        console.log("Product barcode debug:", order.get_orderlines().map(l => ({
-            name: l.get_full_product_name(),
-            barcode: l.product_id?.barcode,
-            frcs_gtin: l.product_id?.frcs_gtin,
-        })));
-        // Log the full raw product object to see ALL available fields
-        const firstLine = order.get_orderlines()[0];
-        if (firstLine) {
-            console.log("Full product object keys:", Object.keys(firstLine.product_id || {}));
-            console.log("Full product object:", firstLine.product_id);
-            console.log("line keys:", Object.keys(firstLine));
-            console.log("product_id:", firstLine.product_id);
-            console.log("get_product:", firstLine.get_product?.());
-        }
+
+
+
 
         let invoicePayload;
 
@@ -366,10 +377,13 @@ patch(PaymentScreen.prototype, {
                 payment: paymentTypes,
                 invoiceNumber: posNumber,   // FIXED: now "74/1.0.0" format
                 referentDocumentNumber: sdc_invoice,
-                referentDocumentDT: referentDT,
+                referentDocumentDT: (isRefund && referentDT) ? new Date(referentDT).toISOString() : "",
                 options: {
                     omitTextualRepresentation: 0,
-                    omitQRCodeGen: 0,
+                    // QR code only on Normal Sale/Refund - Advance/Copy/Training/Proforma are not final fiscal invoices
+                    // For refunds, check the resolved invoice_type not the mode flags (which are false on refund orders)
+                    omitQRCodeGen: (isAdvance || isProforma || isTraining || 
+                        (isRefund && invoice_type !== "Normal")) ? "1" : "0",
                 },
                 items: items,
             };

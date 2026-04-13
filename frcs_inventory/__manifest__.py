@@ -8,6 +8,7 @@
     "data": [
         "security/ir.model.access.csv",
         "data/product_categories.xml",           # loads after tax group
+        "data/default_products.xml",              # default Deposit product for Advance Sales
         "views/product_views.xml",
         "views/tax_products_views.xml",
         "views/server_actions.xml",

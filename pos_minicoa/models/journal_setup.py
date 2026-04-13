@@ -23,6 +23,25 @@ PAYMENT_METHODS = [
         'is_cash': True,
         'pos_name': None,  # links to second POS found
     },
+    # Special mode methods - Training and Proforma (zero-amount, for TaxCore tagging only)
+    {
+        'name': 'Training',
+        'journal_type': 'bank',
+        'journal_code': 'POSTR',
+        'journal_name': 'POS Training',
+        'is_cash_count': False,
+        'is_cash': False,
+        'pos_name': None,
+    },
+    {
+        'name': 'Proforma',
+        'journal_type': 'bank',
+        'journal_code': 'POSPF',
+        'journal_name': 'POS Proforma',
+        'is_cash_count': False,
+        'is_cash': False,
+        'pos_name': None,
+    },
     # Non-cash methods - shared across all POS configs
     {
         'name': 'POS Card',
