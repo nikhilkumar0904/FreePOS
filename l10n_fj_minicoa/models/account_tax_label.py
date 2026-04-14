@@ -1,12 +1,3 @@
-from odoo import models, fields
-
-
-class AccountTax(models.Model):
-    _inherit = 'account.tax'
-
-    frcs_label = fields.Char(
-        string="FRCS Label",
-        help="FRCS VAT label for TaxCore mapping (e.g., A, B, D, G).",
-        size=2,
-    )
-
+# frcs_label field removed — use the standard Odoo invoice_label field instead.
+# invoice_label is already on account.tax and is what TaxCore sync reads/writes.
+# Having a separate frcs_label field creates confusion and is unused by any sync logic.

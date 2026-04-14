@@ -139,15 +139,9 @@ class ProductTemplate(models.Model):
         store=True,
     )
 
-    frcs_tax_label = fields.Selection(
-        selection=[
-            ("A", "A (15%)"),
-            ("E", "E (9%)"),
-            ("F", "F (0%)"),
-            ("P", "P (0.25%)"),
-        ],
+    frcs_tax_label = fields.Char(
         string="FRCS Tax Label",
-        help="Legacy FRCS label.",
+        help="FRCS TaxCore tax label (e.g. A, B, G). Populated dynamically from TaxCore — not hardcoded.",
         tracking=True,
     )
 
@@ -204,18 +198,15 @@ class ProductTemplate(models.Model):
         if 'x_sale_tax_id' in vals and vals['x_sale_tax_id']:
             tax_to_apply = self.env['account.tax'].browse(vals['x_sale_tax_id'])
 
-        # If label is set without explicit x_sale_tax_id, try inferring
+        # If label is set, find the matching tax by invoice_label — no hardcoded rate map.
         if not tax_to_apply and 'frcs_tax_label' in vals and vals['frcs_tax_label']:
             label = vals['frcs_tax_label']
-            amount_map = {'A': 15.0, 'E': 9.0, 'F': 0.0, 'P': 0.25}
-            rate = amount_map.get(label)
-            if rate is not None:
-                tax_to_apply = self.env['account.tax'].search([
-                    ('type_tax_use', '=', 'sale'),
-                    ('amount_type', '=', 'percent'),
-                    ('amount', 'in', [rate, 12.5 if rate == 15.0 else rate]),
-                    '|', ('company_id', '=', False), ('company_id', 'in', self.env.companies.ids)
-                ], limit=1)
+            tax_to_apply = self.env['account.tax'].search([
+                ('type_tax_use', '=', 'sale'),
+                ('amount_type', '=', 'percent'),
+                ('invoice_label', '=', label),
+                '|', ('company_id', '=', False), ('company_id', 'in', self.env.companies.ids)
+            ], limit=1)
 
         res = super().write(vals)
 
@@ -383,61 +374,36 @@ class ProductTemplate(models.Model):
 
     @api.onchange('frcs_tax_label')
     def _onchange_frcs_tax_label_sync_tax(self):
-        """Keep FRCS label and selected sales tax in sync when user changes the label."""
-        label_to_rate = {
-            'A': 15.0,
-            'E': 9.0,
-            'F': 0.0,
-            'P': 0.25,
-        }
+        """Find the matching sales tax by invoice_label — no hardcoded rate map."""
         for rec in self:
-            rate = label_to_rate.get(rec.frcs_tax_label)
-            if rate is None:
+            if not rec.frcs_tax_label:
                 continue
             tax = rec.env['account.tax'].search([
                 ('type_tax_use', '=', 'sale'),
                 ('amount_type', '=', 'percent'),
-                ('amount', 'in', [rate, 12.5 if rate == 15.0 else rate]),  # accept legacy 12.5% if needed
-                '|', ('company_id', '=', False), ('company_id', 'in', rec.allowed_company_ids.ids if hasattr(rec, 'allowed_company_ids') else [rec.company_id.id] )
+                ('invoice_label', '=', rec.frcs_tax_label),
+                '|', ('company_id', '=', False),
+                ('company_id', 'in', rec.allowed_company_ids.ids
+                 if hasattr(rec, 'allowed_company_ids') else [rec.company_id.id]),
             ], limit=1)
             if tax:
                 rec.x_sale_tax_id = tax
 
     @api.onchange('x_sale_tax_id')
     def _onchange_x_sale_tax_id_sync_label(self):
-        amount_to_label = {
-            15.0: 'A',
-            12.5: 'A',  # legacy mapping
-            9.0: 'E',
-            0.0: 'F',
-            0.25: 'P',
-        }
+        """Sync frcs_tax_label from the selected tax's invoice_label — no hardcoded map."""
         for rec in self:
-            if rec.x_sale_tax_id and rec.x_sale_tax_id.amount_type == 'percent':
-                label = amount_to_label.get(round(rec.x_sale_tax_id.amount or 0.0, 2))
-                if label:
-                    rec.frcs_tax_label = label
-                # keep product taxes in sync for accounting/POS
+            if rec.x_sale_tax_id:
+                rec.frcs_tax_label = rec.x_sale_tax_id.invoice_label or ''
                 rec.taxes_id = [(6, 0, [rec.x_sale_tax_id.id])]
 
     @api.onchange('taxes_id')
     def _onchange_taxes_id_sync_label(self):
+        """Sync frcs_tax_label from the tax's invoice_label — no hardcoded map."""
         for rec in self:
             sale_tax = rec.taxes_id.filtered(lambda t: t.type_tax_use == 'sale')[:1]
-            if sale_tax:
-                label = getattr(sale_tax, 'label_on_invoice', False)
-                if not label and sale_tax.amount_type == 'percent':
-                    label_map = {
-                        15.0: 'A',
-                        12.5: 'A',
-                        9.0: 'E',
-                        0.0: 'F',
-                        0.25: 'P',
-                    }
-                    label = label_map.get(round(sale_tax.amount or 0.0, 2))
-                rec.frcs_tax_label = label
-            else:
-                rec.frcs_tax_label = False
+            rec.frcs_tax_label = sale_tax.invoice_label if sale_tax else ''
+
 
     @api.constrains("frcs_gtin")
     def _check_frcs_gtin(self):

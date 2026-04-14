@@ -4,6 +4,8 @@ import uuid
 from pathlib import Path
 
 import requests
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from odoo import models, api, _
 from odoo.exceptions import UserError
@@ -78,16 +80,10 @@ class TaxCoreClient(models.AbstractModel):
         _logger.info("TaxCore: payment=%s", invoice.get("payment"))
         _logger.info("TaxCore: items count=%s", len(invoice.get("Items", [])))
 
-        base_dir = self._get_cert_dir()
-        cert_path = base_dir / f"{company.id}_{uuid.uuid4().hex}_cert.pem"
-        key_path = base_dir / f"{company.id}_{uuid.uuid4().hex}_key.pem"
-        _logger.info("TaxCore: writing cert to %s", cert_path)
+        cert_path, key_path = self._write_temp_certs(config)
+        _logger.info("TaxCore: cert files written, making request...")
 
         try:
-            cert_path.write_bytes(cert_bytes)
-            key_path.write_bytes(key_bytes)
-            _logger.info("TaxCore: cert files written OK, making request...")
-
             response = requests.post(
                 url,
                 json=invoice,
@@ -124,11 +120,27 @@ class TaxCoreClient(models.AbstractModel):
 
         _logger.info("TaxCore: success!")
         return response.json()
+    def _write_temp_certs(self, config):
+        """Write cert_pem and key_pem from config to temp files.
+        Returns (cert_path, key_path). Caller is responsible for cleanup.
+        """
+        if not config.cert_pem or not config.key_pem:
+            raise UserError(
+                "Certificate not configured. Please upload and convert your PFX certificate first."
+            )
+        cert_bytes = base64.b64decode(config.cert_pem)
+        key_bytes = base64.b64decode(config.key_pem)
+        base_dir = self._get_cert_dir()
+        cert_path = base_dir / f"{config.company_id.id}_{uuid.uuid4().hex}_cert.pem"
+        key_path = base_dir / f"{config.company_id.id}_{uuid.uuid4().hex}_key.pem"
+        cert_path.write_bytes(cert_bytes)
+        key_path.write_bytes(key_bytes)
+        return cert_path, key_path
+
     @api.model
     def get_tax_groups(self):
         """Fetch tax rates from TaxCore V3 API endpoint /api/v3/tax-rates.
-        Per FRCS spec: No authentication required for this endpoint.
-        Only needs the V-SDC URL from config.
+        Requires mTLS client certificate (TaxCore returns 403 without it).
         """
         company = self.env.company
         config = self.env["frcs.vsdc.config"].search(
@@ -138,17 +150,24 @@ class TaxCoreClient(models.AbstractModel):
         if not config:
             raise Exception("FRCS V-SDC configuration not found for this company.")
 
-        url = config.vsdc_url.rstrip("/") + "/api/v3/tax-rates"
+        # /api/v3/tax-rates lives on the public API server, not the V-SDC server.
+        # Derive it by replacing "vsdc." with "api." in the hostname.
+        # e.g. https://vsdc.sandbox.vms.frcs.org.fj -> https://api.sandbox.vms.frcs.org.fj
+        vsdc_url = config.vsdc_url.rstrip("/")
+        api_url = vsdc_url.replace("//vsdc.", "//api.", 1)
+        url = api_url + "/api/v3/tax-rates"
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
             "Accept-Language": "en-US",
         }
 
-        _logger.info("Fetching tax rates from TaxCore: %s", url)
+        _logger.info("Fetching tax rates from TaxCore API: %s", url)
 
         try:
-            response = requests.get(url, headers=headers, timeout=20)
+            # verify=False: sandbox uses a non-standard CA not in Python's cert bundle.
+            # For production, replace with verify='/path/to/frcs-ca.crt'
+            response = requests.get(url, headers=headers, timeout=20, verify=False)
         except requests.RequestException as e:
             raise Exception(f"Network error contacting TaxCore: {e}")
 
@@ -161,17 +180,10 @@ class TaxCoreClient(models.AbstractModel):
 
     @api.model
     def sync_tax_rates_from_taxcore(self):
-        """Fetch tax rates from TaxCore /api/v3/tax-rates and sync into Odoo taxes.
+        """Fetch tax rates from TaxCore /api/v3/tax-rates and fully sync into Odoo.
 
-        Response structure:
-        {
-          "currentTaxRates": [{
-            "taxCategories": [{
-              "name": "VAT",
-              "taxRates": [{"rate": 12.5, "label": "A"}, ...]
-            }]
-          }]
-        }
+        Creates missing taxes and updates existing ones based purely on what
+        TaxCore returns. No hardcoded labels or rates anywhere.
         """
         try:
             response = self.get_tax_groups()
@@ -184,18 +196,22 @@ class TaxCoreClient(models.AbstractModel):
 
         current_groups = response.get('currentTaxRates', [])
         if not current_groups:
+            _logger.error("TaxCore response has no currentTaxRates. Full response: %s", response)
             return {'success': False, 'error': 'No currentTaxRates in response'}
 
-        # Use the first (most recent) current tax rate group
-        current = current_groups[0]
+        # currentTaxRates may be a list of group dicts or a single group dict.
+        if isinstance(current_groups, list):
+            current = current_groups[0] if current_groups else {}
+        elif isinstance(current_groups, dict):
+            current = current_groups
+        else:
+            return {'success': False, 'error': f'Unexpected currentTaxRates type: {type(current_groups).__name__}'}
+
         tax_categories = current.get('taxCategories', [])
 
-        Tax = self.env['account.tax'].sudo()
-        company = self.env.company
-        synced = []
+        # Build flat map: label -> {rate, category_name} from all categories in the response.
+        # No hardcoded labels — everything comes from TaxCore.
         all_labels = {}
-
-        # Build flat map of label -> rate from all tax categories
         for category in tax_categories:
             cat_name = category.get('name', '')
             for tax_rate in category.get('taxRates', []):
@@ -206,21 +222,49 @@ class TaxCoreClient(models.AbstractModel):
 
         _logger.info("TaxCore returned labels: %s", all_labels)
 
-        # Sync each label to matching Odoo taxes by invoice_label
+        Tax = self.env['account.tax'].sudo()
+        company = self.env.company
+        created = []
+        updated = []
+
         for label, info in all_labels.items():
             rate = info['rate']
-            taxes = Tax.search([
-                ('company_id', '=', company.id),
-                ('invoice_label', '=', label),
-                ('amount_type', '=', 'percent'),
-            ])
-            for tax in taxes:
-                if tax.amount != rate:
-                    tax.write({'amount': rate})
-                    _logger.info("Updated tax label %s: %s%%", label, rate)
-                    synced.append(f"{label}={rate}%")
-                else:
-                    _logger.info("Tax label %s already at %s%% - no change", label, rate)
+            cat_name = info['name']
+            tax_name_base = f"{cat_name} {rate}%" if cat_name else f"Tax {rate}%"
 
-        _logger.info("TaxCore tax sync complete. Updated: %s", synced or "none")
-        return {'success': True, 'synced': synced, 'labels': all_labels}
+            for type_use, use_label in [('sale', 'Sales'), ('purchase', 'Purchase')]:
+                existing = Tax.search([
+                    ('company_id', '=', company.id),
+                    ('invoice_label', '=', label),
+                    ('type_tax_use', '=', type_use),
+                    ('amount_type', '=', 'percent'),
+                ], limit=1)
+
+                if existing:
+                    if existing.amount != rate:
+                        existing.write({'amount': rate})
+                        _logger.info("Updated %s tax label=%s to %s%%", type_use, label, rate)
+                        updated.append(f"{label}({use_label})={rate}%")
+                    else:
+                        _logger.info("Tax label=%s (%s) already at %s%% — no change", label, type_use, rate)
+                else:
+                    Tax.create({
+                        'name': f"{tax_name_base} ({use_label})",
+                        'amount': rate,
+                        'amount_type': 'percent',
+                        'type_tax_use': type_use,
+                        'invoice_label': label,
+                        'company_id': company.id,
+                        'active': True,
+                    })
+                    _logger.info("Created %s tax label=%s at %s%%", type_use, label, rate)
+                    created.append(f"{label}({use_label})={rate}%")
+
+        _logger.info("TaxCore sync complete. Created: %s | Updated: %s",
+                     created or "none", updated or "none")
+        return {
+            'success': True,
+            'created': created,
+            'synced': updated,
+            'labels': all_labels,
+        }

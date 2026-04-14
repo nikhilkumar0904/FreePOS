@@ -13,9 +13,9 @@ class ProductProduct(models.Model):
         store=False,
     )
 
-    frcs_tax_label = fields.Selection(
+    frcs_tax_label = fields.Char(
         related="product_tmpl_id.frcs_tax_label",
-        readonly=False, 
+        readonly=False,
         store=True,
     )
 

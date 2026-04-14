@@ -49,11 +49,14 @@ def post_init_setup(env_or_cr, registry=None):
     Tax = env['account.tax']
     TaxGroup = env['account.tax.group']
     Account = env['account.account']
-    # Label map is now fetched from TaxCore via sync_tax_rates_from_taxcore()
-    # This is only a fallback used if TaxCore is unavailable during install
+    # Fallback label map — used only if TaxCore is unreachable during install.
+    # Must match the actual Fiji TaxCore labels: A=9%, B=0%, D=15%, G=12.5%
+    # Run "Sync Tax Rates from TaxCore" after install to get the live values.
     fallback_label_map = {
-        0.0: 'G',
-        12.5: 'A',
+        0.0: 'B',
+        9.0: 'A',
+        12.5: 'G',
+        15.0: 'D',
     }
 
     # Helper: ensure one FRCS VAT tax group PER COMPANY

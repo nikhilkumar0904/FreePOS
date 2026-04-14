@@ -158,10 +158,8 @@ class FrcsVsdcConfig(models.Model):
                 for l, info in labels.items()
             )
             msg = (
-                f"Tax rates synced from TaxCore.
-"
-                f"Available: {label_summary}
-"
+                f"Tax rates synced from TaxCore.\n"
+                f"Available: {label_summary}\n"
                 f"Updated: {', '.join(synced) if synced else 'none (already up to date)'}"
             )
             msg_type = "success"
