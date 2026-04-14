@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates id="template" xml:space="preserve">
+
+    <!-- B2B Dialog template — kept for reference but B2B is now fully automatic.
+         Buyer TIN and Cost Centre are pulled from the customer's partner record
+         when a customer is selected on the order. No manual entry needed. -->
+    <t t-name="custom_pos.FrcsB2BDialog" owl="1">
+        <Dialog title="'B2B Invoice Details'" size="'md'">
+            <div class="p-3">
+                <div class="alert alert-info d-flex align-items-start gap-2 mb-4">
+                    <i class="fa fa-info-circle mt-1"/>
+                    <div>
+                        <strong>B2B Transaction</strong><br/>
+                        The Buyer TIN will be printed on the fiscal receipt and submitted
+                        to TaxCore. Buyer Cost Centre is optional.
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">
+                        Buyer TIN <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control form-control-lg"
+                        placeholder="e.g. 502579006"
+                        t-model="state.tin"
+                        t-on-keydown="(e) => e.key === 'Enter' &amp;&amp; onConfirm()"
+                        autofocus="autofocus"/>
+                    <t t-if="state.error">
+                        <div class="text-danger small mt-1">
+                            <i class="fa fa-exclamation-circle"/> <t t-esc="state.error"/>
+                        </div>
+                    </t>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">
+                        Buyer Cost Centre <span class="text-muted fw-normal">(optional)</span>
+                    </label>
+                    <input type="text" class="form-control form-control-lg"
+                        placeholder="e.g. XDE24VT"
+                        t-model="state.costCenter"/>
+                </div>
+            </div>
+            <t t-set-slot="footer">
+                <button class="btn btn-secondary btn-lg" t-on-click="onSkip">
+                    Skip (B2C Sale)
+                </button>
+                <button class="btn btn-primary btn-lg ms-2" t-on-click="onConfirm">
+                    <i class="fa fa-check me-1"/> Confirm B2B
+                </button>
+            </t>
+        </Dialog>
+    </t>
+
+</templates>

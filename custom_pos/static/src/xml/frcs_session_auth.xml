@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates id="template" xml:space="preserve">
+
+    <!-- V-SDC connection status indicator in the POS navbar -->
+    <t t-inherit="point_of_sale.Navbar" t-inherit-mode="extension" owl="1">
+        <xpath expr="//div[contains(@class,'pos-rightheader')]" position="inside">
+            <div class="frcs-vsdc-status d-flex align-items-center me-2"
+                 t-att-title="vsdcState.message">
+                <!-- Checking -->
+                <t t-if="vsdcState.status === 'checking'">
+                    <span class="badge bg-secondary d-flex align-items-center gap-1">
+                        <i class="fa fa-circle-o-notch fa-spin fa-sm"/>
+                        <span class="d-none d-md-inline">V-SDC</span>
+                    </span>
+                </t>
+                <!-- Connected -->
+                <t t-elif="vsdcState.status === 'ok'">
+                    <span class="badge bg-success d-flex align-items-center gap-1">
+                        <i class="fa fa-check-circle fa-sm"/>
+                        <span class="d-none d-md-inline">V-SDC</span>
+                    </span>
+                </t>
+                <!-- Error -->
+                <t t-elif="vsdcState.status === 'error'">
+                    <span class="badge bg-danger d-flex align-items-center gap-1">
+                        <i class="fa fa-exclamation-circle fa-sm"/>
+                        <span class="d-none d-md-inline">V-SDC</span>
+                    </span>
+                </t>
+            </div>
+        </xpath>
+    </t>
+
+</templates>

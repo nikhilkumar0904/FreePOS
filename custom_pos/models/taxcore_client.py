@@ -179,11 +179,43 @@ class TaxCoreClient(models.AbstractModel):
         return response.json()
 
     @api.model
-    def sync_tax_rates_from_taxcore(self):
-        """Fetch tax rates from TaxCore /api/v3/tax-rates and fully sync into Odoo.
+    def authenticate_vsdc(self):
+        """Perform mutual TLS authentication with V-SDC on POS session start.
 
-        Creates missing taxes and updates existing ones based purely on what
-        TaxCore returns. No hardcoded labels or rates anywhere.
+        Calls /api/v3/tax-rates using the client certificate to prove that:
+          - The POS has a valid certificate (client authenticated to V-SDC)
+          - The V-SDC responds correctly (V-SDC authenticated to POS via TLS)
+
+        This satisfies the FRCS certification requirement:
+        "Upon operation start, the POS and V-SDC are mutually authenticated"
+
+        Returns {'success': True} on success, {'success': False, 'error': ...} on failure.
+        """
+        _logger.info("FRCS: Performing V-SDC mutual authentication on POS session start")
+        try:
+            response = self.get_tax_groups()
+            if response:
+                _logger.info("FRCS: V-SDC mutual authentication successful on session start")
+                return {'success': True}
+            else:
+                return {'success': False, 'error': 'Empty response from V-SDC'}
+        except Exception as e:
+            _logger.error("FRCS: V-SDC mutual authentication failed on session start: %s", e)
+            return {'success': False, 'error': str(e)}
+
+    @api.model
+    def sync_tax_rates_from_taxcore(self):
+        """Fetch tax rates from TaxCore /api/v3/tax-rates and sync into Odoo taxes.
+
+        Response structure:
+        {
+          "currentTaxRates": [{
+            "taxCategories": [{
+              "name": "VAT",
+              "taxRates": [{"rate": 12.5, "label": "A"}, ...]
+            }]
+          }]
+        }
         """
         try:
             response = self.get_tax_groups()
@@ -199,19 +231,29 @@ class TaxCoreClient(models.AbstractModel):
             _logger.error("TaxCore response has no currentTaxRates. Full response: %s", response)
             return {'success': False, 'error': 'No currentTaxRates in response'}
 
-        # currentTaxRates may be a list of group dicts or a single group dict.
+        # currentTaxRates may be:
+        #   - a list of group dicts  (as per the API docs example)
+        #   - a single group dict    (what the Fiji server actually returns)
+        # Normalise to a single group dict either way.
         if isinstance(current_groups, list):
             current = current_groups[0] if current_groups else {}
         elif isinstance(current_groups, dict):
+            # It IS the current group already — use it directly
             current = current_groups
         else:
+            _logger.error("Unexpected currentTaxRates type %s. Full response: %s",
+                          type(current_groups).__name__, response)
             return {'success': False, 'error': f'Unexpected currentTaxRates type: {type(current_groups).__name__}'}
 
+        _logger.info("TaxCore current group keys: %s", list(current.keys()) if isinstance(current, dict) else current)
         tax_categories = current.get('taxCategories', [])
 
-        # Build flat map: label -> {rate, category_name} from all categories in the response.
-        # No hardcoded labels — everything comes from TaxCore.
+        Tax = self.env['account.tax'].sudo()
+        company = self.env.company
+        synced = []
         all_labels = {}
+
+        # Build flat map of label -> rate from all tax categories
         for category in tax_categories:
             cat_name = category.get('name', '')
             for tax_rate in category.get('taxRates', []):
@@ -222,49 +264,21 @@ class TaxCoreClient(models.AbstractModel):
 
         _logger.info("TaxCore returned labels: %s", all_labels)
 
-        Tax = self.env['account.tax'].sudo()
-        company = self.env.company
-        created = []
-        updated = []
-
+        # Sync each label to matching Odoo taxes by invoice_label
         for label, info in all_labels.items():
             rate = info['rate']
-            cat_name = info['name']
-            tax_name_base = f"{cat_name} {rate}%" if cat_name else f"Tax {rate}%"
-
-            for type_use, use_label in [('sale', 'Sales'), ('purchase', 'Purchase')]:
-                existing = Tax.search([
-                    ('company_id', '=', company.id),
-                    ('invoice_label', '=', label),
-                    ('type_tax_use', '=', type_use),
-                    ('amount_type', '=', 'percent'),
-                ], limit=1)
-
-                if existing:
-                    if existing.amount != rate:
-                        existing.write({'amount': rate})
-                        _logger.info("Updated %s tax label=%s to %s%%", type_use, label, rate)
-                        updated.append(f"{label}({use_label})={rate}%")
-                    else:
-                        _logger.info("Tax label=%s (%s) already at %s%% — no change", label, type_use, rate)
+            taxes = Tax.search([
+                ('company_id', '=', company.id),
+                ('invoice_label', '=', label),
+                ('amount_type', '=', 'percent'),
+            ])
+            for tax in taxes:
+                if tax.amount != rate:
+                    tax.write({'amount': rate})
+                    _logger.info("Updated tax label %s: %s%%", label, rate)
+                    synced.append(f"{label}={rate}%")
                 else:
-                    Tax.create({
-                        'name': f"{tax_name_base} ({use_label})",
-                        'amount': rate,
-                        'amount_type': 'percent',
-                        'type_tax_use': type_use,
-                        'invoice_label': label,
-                        'company_id': company.id,
-                        'active': True,
-                    })
-                    _logger.info("Created %s tax label=%s at %s%%", type_use, label, rate)
-                    created.append(f"{label}({use_label})={rate}%")
+                    _logger.info("Tax label %s already at %s%% - no change", label, rate)
 
-        _logger.info("TaxCore sync complete. Created: %s | Updated: %s",
-                     created or "none", updated or "none")
-        return {
-            'success': True,
-            'created': created,
-            'synced': updated,
-            'labels': all_labels,
-        }
+        _logger.info("TaxCore tax sync complete. Updated: %s", synced or "none")
+        return {'success': True, 'synced': synced, 'labels': all_labels}
