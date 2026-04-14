@@ -370,8 +370,27 @@ patch(PaymentScreen.prototype, {
             invoicePayload = {
                 dateAndTimeOfIssue: new Date().toISOString(),
                 cashier: this.pos.get_cashier().name,
-                buyerId: null,
-                buyerCostCenterId: null,
+                buyerId: (() => {
+                    // In Odoo 18 POS, partner_id is a Proxy(ResPartner).
+                    // Custom fields must be read via the raw baseData object.
+                    const partner = order.partner_id;
+                    if (!partner) return null;
+                    // Read custom fields from baseData (raw server values)
+                    const raw = partner._raw || partner.baseData || partner;
+                    const frcs_tin = raw.frcs_tin || partner.frcs_tin;
+                    const is_vat_reg = raw.frcs_is_vat_registered || partner.frcs_is_vat_registered;
+                    const vat = raw.vat || partner.vat;
+                    console.log("[FRCS B2B] raw frcs_tin:", frcs_tin, "vat_reg:", is_vat_reg, "vat:", vat);
+                    if (is_vat_reg && frcs_tin) return frcs_tin;
+                    return (vat && vat !== false) ? vat : null;
+                })(),
+                buyerCostCenterId: (() => {
+                    const partner = order.partner_id;
+                    if (!partner) return null;
+                    const raw = partner._raw || partner.baseData || partner;
+                    const cc = raw.frcs_cost_center || partner.frcs_cost_center;
+                    return (cc && cc !== false) ? cc : null;
+                })(),
                 invoiceType: invoice_type,
                 transactionType: transaction_type,
                 payment: paymentTypes,

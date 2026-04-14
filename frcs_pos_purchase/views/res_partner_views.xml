@@ -9,6 +9,7 @@
                     <group string="FRCS">
                         <field name="frcs_tin"/>
                         <field name="frcs_is_vat_registered"/>
+                        <field name="frcs_cost_center"/>
                     </group>
                 </xpath>
             </field>
