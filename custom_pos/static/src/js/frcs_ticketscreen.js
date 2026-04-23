@@ -200,6 +200,7 @@ patch (TicketScreen.prototype, {
                 referentDocumentDT: referentDocumentDT ? new Date(referentDocumentDT).toISOString() : "",
                 options: {
                     omitTextualRepresentation: "0",
+                    // Copy invoices are not final fiscal invoices - never carry a QR code.
                     omitQRCodeGen: "1",
                 },
                 items: items,

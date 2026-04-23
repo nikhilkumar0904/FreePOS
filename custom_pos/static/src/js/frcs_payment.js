@@ -399,10 +399,10 @@ patch(PaymentScreen.prototype, {
                 referentDocumentDT: (isRefund && referentDT) ? new Date(referentDT).toISOString() : "",
                 options: {
                     omitTextualRepresentation: 0,
-                    // QR code only on Normal Sale/Refund - Advance/Copy/Training/Proforma are not final fiscal invoices
-                    // For refunds, check the resolved invoice_type not the mode flags (which are false on refund orders)
-                    omitQRCodeGen: (isAdvance || isProforma || isTraining || 
-                        (isRefund && invoice_type !== "Normal")) ? "1" : "0",
+                    // QR code only on Normal and Advance invoices (sales and their refunds).
+                    // Proforma, Training, and Copy are not final fiscal invoices and must not carry a QR.
+                    omitQRCodeGen: (isProforma || isTraining ||
+                        (isRefund && invoice_type !== "Normal" && invoice_type !== "Advance")) ? "1" : "0",
                 },
                 items: items,
             };
