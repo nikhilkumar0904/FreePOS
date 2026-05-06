@@ -2,7 +2,7 @@
     "name": "FRCS Inventory",
     "version": "1.0.1",
     "summary": "Inventory extensions for FRCS compliance (GTIN, tax label, groundwork)",
-    "author": "USP Team 10",
+    "author": "FRCS IT Team",
     "license": "LGPL-3",
     "depends": ["base", "stock", "product", "account", "point_of_sale", "l10n_fj_minicoa"],  # POS + CoA + FRCS
     "data": [

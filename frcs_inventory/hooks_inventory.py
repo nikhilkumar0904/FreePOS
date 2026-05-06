@@ -6,7 +6,7 @@ def post_init_hook(env):
 
 
 def _create_default_products(env):
-    """Create default products required by FreePOS on fresh install."""
+    """Create default products required by Fiji Revenue and Customs POS on fresh install."""
     Product = env['product.template'].sudo()
 
     # Deposit product for Advance Sale prepayments
@@ -22,7 +22,7 @@ def _create_default_products(env):
             'description_sale': 'Advance deposit / prepayment for goods or services not yet delivered',
         })
         import logging
-        logging.getLogger(__name__).info("FreePOS: Created default Deposit product")
+        logging.getLogger(__name__).info("Fiji Revenue and Customs POS: Created default Deposit product")
 
 
 def _setup_stock_accounts(env):

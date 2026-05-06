@@ -1,16 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<odoo> 
+<odoo>
+    <!--
+        Inherit kept as a no-op anchor so existing references to
+        view_pos_config_form_inherit_raw_printer_ip remain resolvable.
+
+        The "ESC/POS Printer IP" setting was removed from the UI: the
+        accredited deployment uses the standard browser print flow
+        (Print Full Receipt button) with a Windows-installed USB
+        receipt printer. The raw_printer_ip field on pos.config and
+        the pos.print.job auto-print path remain in the codebase but
+        are not exposed to end users.
+    -->
     <record id="view_pos_config_form_inherit_raw_printer_ip" model="ir.ui.view">
         <field name="name">pos.config.form.raw.printer.ip</field>
         <field name="model">pos.config</field>
-        <field name="inherit_id" ref="point_of_sale.pos_config_view_form"/> 
-        <field name="arch" type="xml"> 
-            <xpath expr="//setting[@id='other_devices']" position="after"> 
-                <setting string="ESC/POS Printer (Raw)" help="IP of the raw ESC/POS printer (TCP 9100)."> 
-                    <field name="raw_printer_ip" placeholder="192.168.x.x"/> 
-                </setting> 
-            </xpath> 
+        <field name="inherit_id" ref="point_of_sale.pos_config_view_form"/>
+        <field name="arch" type="xml">
+            <!-- Intentionally empty: no UI changes -->
+            <xpath expr="//setting[@id='other_devices']" position="after">
+                <!-- raw_printer_ip setting removed -->
+            </xpath>
         </field>
-
     </record>
 </odoo>

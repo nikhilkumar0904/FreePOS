@@ -2,7 +2,7 @@
     "name": "FRCS Purchase Order",
     "summary": "Align vendor purchase inputs with FRCS/VMS requirements for downstream fiscalization.",
     "version": "18.0.1.0",
-    "author": "USP IEP Team 10",
+    "author": "FRCS IT Team",
     "license": "LGPL-3",
     "category": "Purchases",
     "depends": ["purchase", "stock", "account"],

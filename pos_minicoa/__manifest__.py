@@ -2,7 +2,7 @@
     "name": "POS Mini COA bootstrap",
     "summary": "Bootstraps accounting for POS: CoA, VAT 12.5/0, journals, payment methods, defaults",
     "version": "1.0.2",
-    "author": "Asifa + You",
+    "author": "FRCS IT Team",
     "license": "LGPL-3",
     "depends": [
         "account",

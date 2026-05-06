@@ -2,7 +2,7 @@
     'name': 'Fiji Mini Chart of Accounts (FRCS)',
     'summary': 'Fiji fiscal localization: Mini CoA and FRCS VAT configuration',
     'version': '1.0.6',
-    'author': 'Asifa Hanif',
+    'author': 'FRCS IT Team',
     'license': 'LGPL-3',
     'category': 'Accounting/Localizations/Account Charts',
     'countries': ['fj'],
